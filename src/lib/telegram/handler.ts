@@ -4,7 +4,7 @@
  * runs the handlers, then persists state.
  */
 import crypto from "crypto";
-import QRCode from "qrcode";
+// qrcode is loaded lazily inside generatePlainQR to keep the worker module load light
 import {
   loadState,
   saveState,
@@ -214,6 +214,7 @@ async function camboRequest(env: Env, params: Record<string, string | number>) {
 }
 
 async function generatePlainQR(qr_string: string): Promise<Uint8Array> {
+  const { default: QRCode } = await import("qrcode");
   const buf = await QRCode.toBuffer(qr_string, {
     errorCorrectionLevel: "M",
     width: 400,

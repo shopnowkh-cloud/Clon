@@ -30,8 +30,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           await handleUpdate(update);
         } catch (e) {
           console.error("[webhook] handleUpdate error:", e);
+          return Response.json({ ok: true, error: String((e as Error)?.stack || e) });
         }
-        // Always return 200 so Telegram doesn't retry indefinitely.
         return Response.json({ ok: true });
       },
     },
