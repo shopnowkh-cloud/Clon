@@ -1128,14 +1128,18 @@ async function handleAdminInput(
     );
   }
   if (key === "buy_video") {
-    env.state.settings.BUY_VIDEO_URL = text;
-    delete env.state.sessions[String(uid)];
+    if (!text) return sendMessage(chatId, "❌ សូមផ្ញើ URL/file_id ឬ upload វីដេអូ");
+    const list = getBuyVideos(env);
+    list.push(text);
+    setBuyVideos(env, list);
+    // keep session open so admin can add more
     return sendMessage(
       chatId,
-      `✅ បានកំណត់វីដេអូ /buy ទៅជា <code>${esc(text)}</code>`,
-      ADMIN_SETTINGS_KB,
+      `✅ បានបន្ថែម (សរុប ${list.length})\n<code>${esc(text.slice(0, 80))}</code>\n\n<i>ផ្ញើ​បន្ត​ដើម្បី​បន្ថែម ឬ​ចុច 🚫 បោះបង់ ដើម្បី​ចប់</i>`,
+      CANCEL_INPUT_KB,
     );
   }
+
   if (key === "user_add") {
     const parts = text.split("|").map((s) => s.trim());
     const target = parseInt(parts[0], 10);
