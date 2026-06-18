@@ -20,6 +20,8 @@ import {
   sendDocument,
   sendMessage,
   sendPhoto,
+  sendVideo,
+  setMyCommands,
 } from "./tg";
 
 // ---------- constants ----------
@@ -52,6 +54,7 @@ const BTN_CHANNEL = "📢 Channel ID";
 const BTN_ADMINS = "👑 គ្រប់គ្រង Admin";
 const BTN_MAINTENANCE = "🛠 Maintenance Mode";
 const BTN_BROADCAST = "📢 ផ្សាយព័ត៌មាន";
+const BTN_BUY_VIDEO = "🎬 វីដេអូ /buy";
 const BTN_BACK_SETTINGS = "⬅️";
 const BTN_KHPAY_KEY_EDIT = "✏️ ប្តូរ KhPay API Key";
 const BTN_KHPAY_INFO = "📊 ព័ត៌មាន KhPay";
@@ -66,15 +69,21 @@ const BTN_DELETE_CONFIRM = "✅ បញ្ជាក់លុប";
 const BTN_DELETE_CANCEL = "🚫 បោះបង់ការលុប";
 const BTN_BROADCAST_CONFIRM = "✅ បញ្ជាក់ផ្សាយ";
 const BTN_BROADCAST_CANCEL = "🚫 បោះបង់ការផ្សាយ";
+const BTN_USER_ADD = "➕ បន្ថែម User";
+const BTN_PURCHASE_ADD = "➕ បន្ថែម គូប៉ុង User";
+const BTN_VIDEO_EDIT = "✏️ ប្តូរ វីដេអូ";
+const BTN_VIDEO_CLEAR = "🗑 លុប វីដេអូ";
 const ADMIN_SETTINGS_BTN = "/settings";
 
 const ADMIN_BUTTON_LABELS = new Set([
   BTN_ADD_ACCOUNT, BTN_DELETE_TYPE, BTN_STOCK, BTN_USERS, BTN_BUYERS,
   BTN_KHPAY, BTN_CHANNEL, BTN_ADMINS, BTN_MAINTENANCE, BTN_BROADCAST,
+  BTN_BUY_VIDEO,
   BTN_BACK_SETTINGS, BTN_KHPAY_KEY_EDIT, BTN_KHPAY_INFO,
   BTN_CHANNEL_EDIT, BTN_CHANNEL_CLEAR, BTN_ADMIN_ADD, BTN_ADMIN_REMOVE,
   BTN_MAINT_ON, BTN_MAINT_OFF, BTN_CANCEL_INPUT,
   BTN_DELETE_CONFIRM, BTN_DELETE_CANCEL, BTN_BROADCAST_CONFIRM, BTN_BROADCAST_CANCEL,
+  BTN_USER_ADD, BTN_PURCHASE_ADD, BTN_VIDEO_EDIT, BTN_VIDEO_CLEAR,
   ADMIN_SETTINGS_BTN,
 ]);
 
@@ -87,7 +96,8 @@ const ADMIN_SETTINGS_KB = {
       [{ text: BTN_STOCK }, { text: BTN_BUYERS }],
       [{ text: BTN_USERS }, { text: BTN_KHPAY }],
       [{ text: BTN_CHANNEL }, { text: BTN_ADMINS }],
-      [{ text: BTN_BROADCAST }, { text: BTN_MAINTENANCE }],
+      [{ text: BTN_BROADCAST }, { text: BTN_BUY_VIDEO }],
+      [{ text: BTN_MAINTENANCE }],
     ],
     resize_keyboard: true,
     is_persistent: true,
@@ -110,6 +120,18 @@ const ADMINS_SUBMENU_KB = Markup.keyboard([
 ]);
 const MAINTENANCE_SUBMENU_KB = Markup.keyboard([
   [BTN_MAINT_ON, BTN_MAINT_OFF],
+  [BTN_BACK_SETTINGS],
+]);
+const VIDEO_SUBMENU_KB = Markup.keyboard([
+  [BTN_VIDEO_EDIT, BTN_VIDEO_CLEAR],
+  [BTN_BACK_SETTINGS],
+]);
+const USERS_SUBMENU_KB = Markup.keyboard([
+  [BTN_USER_ADD],
+  [BTN_BACK_SETTINGS],
+]);
+const BUYERS_SUBMENU_KB = Markup.keyboard([
+  [BTN_PURCHASE_ADD],
   [BTN_BACK_SETTINGS],
 ]);
 const BROADCAST_CONFIRM_KB = Markup.keyboard([
@@ -488,6 +510,24 @@ async function handleCommand(env: Env, msg: any) {
     delete env.state.sessions[String(uid)];
     return showAccountSelection(env, chatId);
   }
+  if (text === "/buy" || text.startsWith("/buy ")) {
+    await notifyAdminNewUser(env, msg.from);
+    if (env.maintenance && !isAdmin(env, uid)) {
+      return sendMessage(chatId, "🔧 <b>Bot កំពុង Update សូមរង់ចាំមួយភ្លែត...</b>");
+    }
+    const videoUrl = env.state.settings.BUY_VIDEO_URL || "";
+    if (videoUrl) {
+      const sent = await sendVideo(chatId, videoUrl, {
+        caption: "🎬 <b>របៀបទិញគូប៉ុង</b>",
+      });
+      if (!sent) {
+        await sendMessage(chatId, `🎬 <b>របៀបទិញគូប៉ុង</b>\n\n${esc(videoUrl)}`);
+      }
+    } else {
+      await sendMessage(chatId, "ℹ️ មិនទាន់មានវីដេអូ /buy ត្រូវបានកំណត់ទេ");
+    }
+    return;
+  }
 }
 
 async function handleCallback(env: Env, cb: any) {
@@ -525,11 +565,12 @@ async function handleCallback(env: Env, cb: any) {
     const rows: any[][] = [];
     for (let i = 0; i < qtyBtns.length; i += 4) rows.push(qtyBtns.slice(i, i + 4));
     rows.push([Markup.button.callback("🚫 បោះបង់", "cancel_buy")]);
-    const ok = await editMessageText(chatId, msgId, "<b>សូមជ្រើសរើសចំនួនដែលចង់ទិញ៖</b>", {
+    const promptText = `<b>ប្រភេទ ${esc(at)} មានចំនួន ${pool.length} តម្លៃ $${price} ក្នុងមួយ</b>`;
+    const ok = await editMessageText(chatId, msgId, promptText, {
       reply_markup: Markup.inlineKeyboard(rows),
     });
     if (!ok) {
-      await sendMessage(chatId, "<b>សូមជ្រើសរើសចំនួនដែលចង់ទិញ៖</b>", {
+      await sendMessage(chatId, promptText, {
         reply_markup: Markup.inlineKeyboard(rows),
       });
       deleteMessage(chatId, msgId);
@@ -951,6 +992,38 @@ async function dispatchAdminButton(env: Env, chatId: number, uid: number, btn: s
         "📢 សូមផ្ញើ​សារ​ដែល​ចង់​ផ្សាយ​ទៅ​អ្នក​ប្រើ​ប្រាស់​ទាំង​អស់៖\n\n<i>ចុច 🚫 បោះបង់ ដើម្បីបោះបង់</i>",
         CANCEL_INPUT_KB,
       );
+    case BTN_BUY_VIDEO: {
+      const cur = env.state.settings.BUY_VIDEO_URL || "(មិនទាន់កំណត់)";
+      return sendMessage(
+        chatId,
+        `🎬 <b>វីដេអូ /buy បច្ចុប្បន្ន៖</b>\n<code>${esc(cur)}</code>`,
+        VIDEO_SUBMENU_KB,
+      );
+    }
+    case BTN_VIDEO_EDIT:
+      env.state.sessions[String(uid)] = { state: "admin_input:buy_video" };
+      return sendMessage(
+        chatId,
+        "🎬 សូមផ្ញើ <b>URL វីដេអូ</b> ឬ <b>file_id</b> ថ្មី:\n\n<i>ចុច 🚫 បោះបង់ ដើម្បីបោះបង់</i>",
+        CANCEL_INPUT_KB,
+      );
+    case BTN_VIDEO_CLEAR:
+      env.state.settings.BUY_VIDEO_URL = "";
+      return sendMessage(chatId, "✅ បានលុបវីដេអូ /buy", ADMIN_SETTINGS_KB);
+    case BTN_USER_ADD:
+      env.state.sessions[String(uid)] = { state: "admin_input:user_add" };
+      return sendMessage(
+        chatId,
+        "👤 សូមផ្ញើ <b>Telegram User ID</b> (ឬ <code>id|name|@username</code>) ដែលចង់បន្ថែម ដើម្បីទទួលការផ្សាយ:\n\n<i>ចុច 🚫 បោះបង់ ដើម្បីបោះបង់</i>",
+        CANCEL_INPUT_KB,
+      );
+    case BTN_PURCHASE_ADD:
+      env.state.sessions[String(uid)] = { state: "admin_input:purchase_add" };
+      return sendMessage(
+        chatId,
+        "📋 សូមផ្ញើ <code>user_id|email_ឬ_code|ប្រភេទ</code>\n\n<i>ឧ. <code>123456789|user@gmail.com|Spotify</code></i>\n\n<i>User នេះនឹងទទួល SMS E-GetS ដែលផ្ញើទៅ email នេះ</i>",
+        CANCEL_INPUT_KB,
+      );
     default:
       return sendAdminSettingsMenu(chatId);
   }
@@ -1027,6 +1100,74 @@ async function handleAdminInput(
       chatId,
       `📢 <b>ព្រមព្រៀងផ្សាយ:</b>\n\n${esc(text)}\n\n<i>ផ្សាយទៅអ្នកប្រើ ${Object.keys(env.state.users).length} នាក់</i>`,
       BROADCAST_CONFIRM_KB,
+    );
+  }
+  if (key === "buy_video") {
+    env.state.settings.BUY_VIDEO_URL = text;
+    delete env.state.sessions[String(uid)];
+    return sendMessage(
+      chatId,
+      `✅ បានកំណត់វីដេអូ /buy ទៅជា <code>${esc(text)}</code>`,
+      ADMIN_SETTINGS_KB,
+    );
+  }
+  if (key === "user_add") {
+    const parts = text.split("|").map((s) => s.trim());
+    const target = parseInt(parts[0], 10);
+    if (isNaN(target))
+      return sendMessage(chatId, "❌ user_id ត្រូវតែជាលេខ (ឬចុច 🚫 បោះបង់)");
+    const nameRaw = parts[1] || "";
+    const uname = (parts[2] || "").replace(/^@/, "");
+    const [first_name = "", ...rest] = nameRaw.split(/\s+/).filter(Boolean);
+    env.state.users[String(target)] = {
+      first_name,
+      last_name: rest.join(" "),
+      username: uname,
+      first_seen: new Date().toISOString(),
+    };
+    delete env.state.sessions[String(uid)];
+    return sendMessage(
+      chatId,
+      `✅ បានបន្ថែម User <code>${target}</code> (${esc(nameRaw || "—")}) ទៅក្នុងបញ្ជី`,
+      ADMIN_SETTINGS_KB,
+    );
+  }
+  if (key === "purchase_add") {
+    const parts = text.split("|").map((s) => s.trim());
+    if (parts.length < 2)
+      return sendMessage(
+        chatId,
+        "❌ ទម្រង់ខុស។ សូមផ្ញើ <code>user_id|email_ឬ_code|ប្រភេទ</code>",
+      );
+    const target = parseInt(parts[0], 10);
+    const ident = parts[1];
+    const accType = parts[2] || "Manual";
+    if (isNaN(target) || !ident)
+      return sendMessage(chatId, "❌ ទម្រង់ខុស (ឬចុច 🚫 បោះបង់)");
+    const accItem: AccountItem = ident.includes("@")
+      ? { email: ident }
+      : { code: ident };
+    env.state.purchases.push({
+      user_id: target,
+      account_type: accType,
+      quantity: 1,
+      total_price: 0,
+      accounts: [accItem],
+      purchased_at: new Date().toISOString(),
+    });
+    if (!env.state.users[String(target)]) {
+      env.state.users[String(target)] = {
+        first_name: "",
+        last_name: "",
+        username: "",
+        first_seen: new Date().toISOString(),
+      };
+    }
+    delete env.state.sessions[String(uid)];
+    return sendMessage(
+      chatId,
+      `✅ បានភ្ជាប់ <code>${esc(ident)}</code> ទៅ User <code>${target}</code>\n\nUser នេះនឹងទទួល SMS E-GetS ពេលផ្ញើទៅ email នេះ`,
+      ADMIN_SETTINGS_KB,
     );
   }
 }
@@ -1146,13 +1287,21 @@ async function exportBuyers(env: Env, chatId: number) {
     `buyers_${nowKHFile()}.txt`,
     `📋 របាយការណ៍ទិញ — ${Object.keys(grouped).length} អ្នក​ទិញ`,
   );
-  return sendAdminSettingsMenu(chatId);
+  await sendMessage(
+    chatId,
+    "📋 <b>របាយការណ៍ទិញ</b>\n\nចុច <b>➕ បន្ថែម គូប៉ុង User</b> ដើម្បីភ្ជាប់ email/code ទៅ User សម្រាប់ទទួល SMS E-GetS",
+    BUYERS_SUBMENU_KB,
+  );
 }
 
 async function showUsersList(env: Env, chatId: number) {
   const rows = Object.entries(env.state.users);
   if (!rows.length)
-    return sendMessage(chatId, "📭 <b>មិនទាន់មានអ្នកប្រើប្រាស់ទេ។</b>", BACK_SETTINGS_KB);
+    return sendMessage(
+      chatId,
+      "📭 <b>មិនទាន់មានអ្នកប្រើប្រាស់ទេ។</b>\n\nចុច <b>➕ បន្ថែម User</b> ដើម្បីបន្ថែមដោយដៃ",
+      USERS_SUBMENU_KB,
+    );
   const lines: string[] = [`👥 អ្នកប្រើប្រាស់សរុប: ${rows.length}`, ""];
   for (const [uid, info] of rows) {
     const full = [info.first_name, info.last_name].filter(Boolean).join(" ") || "N/A";
@@ -1166,7 +1315,11 @@ async function showUsersList(env: Env, chatId: number) {
     `users_${nowKHFile()}.txt`,
     `👥 បញ្ជីអ្នកប្រើប្រាស់ — ${rows.length} នាក់`,
   );
-  return sendAdminSettingsMenu(chatId);
+  return sendMessage(
+    chatId,
+    "ចុច <b>➕ បន្ថែម User</b> ដើម្បីបន្ថែម User ថ្មីសម្រាប់ផ្សាយ",
+    USERS_SUBMENU_KB,
+  );
 }
 
 async function sendKhpayInfo(env: Env, chatId: number) {
@@ -1218,7 +1371,18 @@ async function handleChannelPost(env: Env, post: any) {
 }
 
 // ---------- entry points ----------
+let _commandsRegistered = false;
+async function ensureBotCommands() {
+  if (_commandsRegistered) return;
+  _commandsRegistered = true;
+  await setMyCommands([
+    { command: "start", description: "ចាប់ផ្តើម" },
+    { command: "buy", description: "ទិញគូប៉ុង" },
+  ]);
+}
+
 export async function handleUpdate(update: any) {
+  ensureBotCommands().catch(() => {});
   const state = await loadState();
   const env = envFromState(state);
   try {
