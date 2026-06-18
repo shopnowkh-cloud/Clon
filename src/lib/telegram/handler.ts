@@ -547,11 +547,12 @@ async function handleCallback(env: Env, cb: any) {
     const rows: any[][] = [];
     for (let i = 0; i < qtyBtns.length; i += 4) rows.push(qtyBtns.slice(i, i + 4));
     rows.push([Markup.button.callback("🚫 បោះបង់", "cancel_buy")]);
-    const ok = await editMessageText(chatId, msgId, "<b>សូមជ្រើសរើសចំនួនដែលចង់ទិញ៖</b>", {
+    const promptText = `<b>ប្រភេទ ${esc(at)} មានចំនួន ${pool.length} តម្លៃ $${price} ក្នុងមួយ</b>`;
+    const ok = await editMessageText(chatId, msgId, promptText, {
       reply_markup: Markup.inlineKeyboard(rows),
     });
     if (!ok) {
-      await sendMessage(chatId, "<b>សូមជ្រើសរើសចំនួនដែលចង់ទិញ៖</b>", {
+      await sendMessage(chatId, promptText, {
         reply_markup: Markup.inlineKeyboard(rows),
       });
       deleteMessage(chatId, msgId);
