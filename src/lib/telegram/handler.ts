@@ -510,6 +510,24 @@ async function handleCommand(env: Env, msg: any) {
     delete env.state.sessions[String(uid)];
     return showAccountSelection(env, chatId);
   }
+  if (text === "/buy" || text.startsWith("/buy ")) {
+    await notifyAdminNewUser(env, msg.from);
+    if (env.maintenance && !isAdmin(env, uid)) {
+      return sendMessage(chatId, "🔧 <b>Bot កំពុង Update សូមរង់ចាំមួយភ្លែត...</b>");
+    }
+    const videoUrl = env.state.settings.BUY_VIDEO_URL || "";
+    if (videoUrl) {
+      const sent = await sendVideo(chatId, videoUrl, {
+        caption: "🎬 <b>របៀបទិញគូប៉ុង</b>",
+      });
+      if (!sent) {
+        await sendMessage(chatId, `🎬 <b>របៀបទិញគូប៉ុង</b>\n\n${esc(videoUrl)}`);
+      }
+    } else {
+      await sendMessage(chatId, "ℹ️ មិនទាន់មានវីដេអូ /buy ត្រូវបានកំណត់ទេ");
+    }
+    return;
+  }
 }
 
 async function handleCallback(env: Env, cb: any) {
