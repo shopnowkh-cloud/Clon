@@ -122,6 +122,18 @@ const MAINTENANCE_SUBMENU_KB = Markup.keyboard([
   [BTN_MAINT_ON, BTN_MAINT_OFF],
   [BTN_BACK_SETTINGS],
 ]);
+const VIDEO_SUBMENU_KB = Markup.keyboard([
+  [BTN_VIDEO_EDIT, BTN_VIDEO_CLEAR],
+  [BTN_BACK_SETTINGS],
+]);
+const USERS_SUBMENU_KB = Markup.keyboard([
+  [BTN_USER_ADD],
+  [BTN_BACK_SETTINGS],
+]);
+const BUYERS_SUBMENU_KB = Markup.keyboard([
+  [BTN_PURCHASE_ADD],
+  [BTN_BACK_SETTINGS],
+]);
 const BROADCAST_CONFIRM_KB = Markup.keyboard([
   [BTN_BROADCAST_CONFIRM],
   [BTN_BROADCAST_CANCEL],
