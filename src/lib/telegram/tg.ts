@@ -203,6 +203,36 @@ export async function setWebhook(url: string, secret_token: string) {
   });
 }
 
+export async function setMyCommands(
+  commands: { command: string; description: string }[],
+) {
+  try {
+    await call("setMyCommands", { commands });
+    return true;
+  } catch (e) {
+    console.warn("[tg] setMyCommands:", (e as Error).message);
+    return false;
+  }
+}
+
+export async function sendVideo(
+  chat_id: number | string,
+  video: string,
+  extra: Record<string, any> = {},
+): Promise<SentMessage | null> {
+  try {
+    return await call<SentMessage>("sendVideo", {
+      chat_id,
+      video,
+      parse_mode: "HTML",
+      ...flattenExtra(extra),
+    });
+  } catch (e) {
+    console.warn(`[tg] sendVideo(${chat_id}):`, (e as Error).message);
+    return null;
+  }
+}
+
 // Convert Markup helper outputs into flat top-level fields.
 function flattenExtra(extra: Record<string, any>): Record<string, any> {
   const out: Record<string, any> = {};
