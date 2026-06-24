@@ -192,7 +192,7 @@ const isAdmin = (env: Env, uid: number) =>
   uid === ADMIN_ID || env.extraAdmins.has(uid);
 
 const mainKb = (env: Env, uid: number) =>
-  isAdmin(env, uid) ? ADMIN_KB : Markup.removeKeyboard();
+  isAdmin(env, uid) ? ADMIN_KB : USER_KB;
 
 // ---------- formatting helpers ----------
 const esc = (s: unknown) =>
