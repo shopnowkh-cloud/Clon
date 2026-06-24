@@ -54,7 +54,7 @@ const BTN_CHANNEL = "📢 Channel ID";
 const BTN_ADMINS = "👑 គ្រប់គ្រង Admin";
 const BTN_MAINTENANCE = "🛠 Maintenance Mode";
 const BTN_BROADCAST = "📢 ផ្សាយព័ត៌មាន";
-const BTN_BUY_VIDEO = "🎬 វីដេអូ /buy";
+const BTN_BUY_VIDEO = "🎬 វីដេអូ របៀបទិញ";
 const BTN_BACK_SETTINGS = "⬅️";
 const BTN_KHPAY_KEY_EDIT = "✏️ ប្តូរ KhPay API Key";
 const BTN_KHPAY_INFO = "📊 ព័ត៌មាន KhPay";
@@ -75,6 +75,11 @@ const BTN_VIDEO_EDIT = "✏️ ប្តូរ វីដេអូ";
 const BTN_VIDEO_CLEAR = "🗑 លុប វីដេអូ";
 const ADMIN_SETTINGS_BTN = "/settings";
 
+// ---- User-facing buttons ----
+const BTN_BUY = "💵 ទិញគូប៉ុង";
+const BTN_HOWTO = "🎬 របៀបទិញ";
+const BTN_HISTORY = "📋 ប្រវត្តិទិញ";
+
 const ADMIN_BUTTON_LABELS = new Set([
   BTN_ADD_ACCOUNT, BTN_DELETE_TYPE, BTN_STOCK, BTN_USERS, BTN_BUYERS,
   BTN_KHPAY, BTN_CHANNEL, BTN_ADMINS, BTN_MAINTENANCE, BTN_BROADCAST,
@@ -87,8 +92,8 @@ const ADMIN_BUTTON_LABELS = new Set([
   ADMIN_SETTINGS_BTN,
 ]);
 
-const MAIN_KB = Markup.keyboard([["💵 ទិញគូប៉ុង"]]);
-const ADMIN_KB = Markup.keyboard([[ADMIN_SETTINGS_BTN]]);
+const USER_KB = Markup.keyboard([[BTN_BUY], [BTN_HOWTO, BTN_HISTORY]]);
+const ADMIN_KB = Markup.keyboard([[BTN_BUY], [BTN_HOWTO, BTN_HISTORY], [ADMIN_SETTINGS_BTN]]);
 const ADMIN_SETTINGS_KB = {
   reply_markup: {
     keyboard: [
