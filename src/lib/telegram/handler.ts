@@ -54,7 +54,7 @@ const BTN_CHANNEL = "📢 Channel ID";
 const BTN_ADMINS = "👑 គ្រប់គ្រង Admin";
 const BTN_MAINTENANCE = "🛠 Maintenance Mode";
 const BTN_BROADCAST = "📢 ផ្សាយព័ត៌មាន";
-const BTN_BUY_VIDEO = "🎬 វីដេអូ /buy";
+const BTN_BUY_VIDEO = "🎬 វីដេអូ របៀបទិញ";
 const BTN_BACK_SETTINGS = "⬅️";
 const BTN_KHPAY_KEY_EDIT = "✏️ ប្តូរ KhPay API Key";
 const BTN_KHPAY_INFO = "📊 ព័ត៌មាន KhPay";
@@ -75,6 +75,11 @@ const BTN_VIDEO_EDIT = "✏️ ប្តូរ វីដេអូ";
 const BTN_VIDEO_CLEAR = "🗑 លុប វីដេអូ";
 const ADMIN_SETTINGS_BTN = "/settings";
 
+// ---- User-facing buttons ----
+const BTN_BUY = "💵 ទិញគូប៉ុង";
+const BTN_HOWTO = "🎬 របៀបទិញ";
+const BTN_HISTORY = "📋 ប្រវត្តិទិញ";
+
 const ADMIN_BUTTON_LABELS = new Set([
   BTN_ADD_ACCOUNT, BTN_DELETE_TYPE, BTN_STOCK, BTN_USERS, BTN_BUYERS,
   BTN_KHPAY, BTN_CHANNEL, BTN_ADMINS, BTN_MAINTENANCE, BTN_BROADCAST,
@@ -87,8 +92,8 @@ const ADMIN_BUTTON_LABELS = new Set([
   ADMIN_SETTINGS_BTN,
 ]);
 
-const MAIN_KB = Markup.keyboard([["💵 ទិញគូប៉ុង"]]);
-const ADMIN_KB = Markup.keyboard([[ADMIN_SETTINGS_BTN]]);
+const USER_KB = Markup.keyboard([[BTN_BUY], [BTN_HOWTO, BTN_HISTORY]]);
+const ADMIN_KB = Markup.keyboard([[BTN_BUY], [BTN_HOWTO, BTN_HISTORY], [ADMIN_SETTINGS_BTN]]);
 const ADMIN_SETTINGS_KB = {
   reply_markup: {
     keyboard: [
@@ -187,7 +192,7 @@ const isAdmin = (env: Env, uid: number) =>
   uid === ADMIN_ID || env.extraAdmins.has(uid);
 
 const mainKb = (env: Env, uid: number) =>
-  isAdmin(env, uid) ? ADMIN_KB : Markup.removeKeyboard();
+  isAdmin(env, uid) ? ADMIN_KB : USER_KB;
 
 // ---------- formatting helpers ----------
 const esc = (s: unknown) =>
@@ -508,28 +513,12 @@ async function handleCommand(env: Env, msg: any) {
       );
     }
     delete env.state.sessions[String(uid)];
+    await sendMessage(
+      chatId,
+      "👋 <b>សូមស្វាគមន៍!</b>\n\nសូមជ្រើសរើសប្រតិបត្តិការខាងក្រោម៖",
+      mainKb(env, uid),
+    );
     return showAccountSelection(env, chatId);
-  }
-  if (text === "/buy" || text.startsWith("/buy ")) {
-    await notifyAdminNewUser(env, msg.from);
-    if (env.maintenance && !isAdmin(env, uid)) {
-      return sendMessage(chatId, "🔧 <b>Bot កំពុង Update សូមរង់ចាំមួយភ្លែត...</b>");
-    }
-    const videos = getBuyVideos(env);
-    if (videos.length === 0) {
-      await sendMessage(chatId, "ℹ️ មិនទាន់មានវីដេអូ /buy ត្រូវបានកំណត់ទេ");
-      return;
-    }
-    for (let i = 0; i < videos.length; i++) {
-      const v = videos[i];
-      const sent = await sendVideo(chatId, v, {
-        caption: i === 0 ? "🎬 <b>របៀបទិញគូប៉ុង</b>" : undefined,
-      });
-      if (!sent) {
-        await sendMessage(chatId, `🎬 ${esc(v)}`);
-      }
-    }
-    return;
   }
 }
 
@@ -888,7 +877,7 @@ async function handleText(env: Env, msg: any) {
     if (ADMIN_BUTTON_LABELS.has(text)) return dispatchAdminButton(env, chatId, uid, text);
   }
 
-  if (text === "💵 ទិញគូប៉ុង") {
+  if (text === BTN_BUY) {
     const sess = env.state.sessions[String(uid)];
     if (sess?.state === "payment_pending")
       return sendMessage(
@@ -897,6 +886,25 @@ async function handleText(env: Env, msg: any) {
       );
     delete env.state.sessions[String(uid)];
     return showAccountSelection(env, chatId);
+  }
+
+  if (text === BTN_HOWTO) {
+    const videos = getBuyVideos(env);
+    if (videos.length === 0) {
+      return sendMessage(chatId, "ℹ️ មិនទាន់មានវីដេអូបង្ហាញនៅឡើយទេ", mainKb(env, uid));
+    }
+    for (let i = 0; i < videos.length; i++) {
+      const v = videos[i];
+      const sent = await sendVideo(chatId, v, {
+        caption: i === 0 ? "🎬 <b>របៀបទិញគូប៉ុង</b>" : undefined,
+      });
+      if (!sent) await sendMessage(chatId, `🎬 ${esc(v)}`);
+    }
+    return;
+  }
+
+  if (text === BTN_HISTORY) {
+    return showUserHistory(env, chatId, uid);
   }
 
   if (env.state.sessions[String(uid)]?.state === "payment_pending")
@@ -1201,6 +1209,27 @@ async function handleAdminInput(
   }
 }
 
+async function showUserHistory(env: Env, chatId: number, uid: number) {
+  const mine = env.state.purchases.filter((p) => Number(p.user_id) === Number(uid));
+  if (!mine.length) {
+    return sendMessage(chatId, "📋 <b>អ្នកមិនទាន់មានប្រវត្តិទិញនៅឡើយទេ</b>", mainKb(env, uid));
+  }
+  const lines: string[] = [`📋 <b>ប្រវត្តិទិញរបស់អ្នក (${mine.length})</b>`, ""];
+  const recent = mine.slice(-20).reverse();
+  for (const p of recent) {
+    lines.push(
+      `🗓 ${fmtKH(p.purchased_at)}\n` +
+        `📦 ${esc(p.account_type)} × ${p.quantity}  💵 $${p.total_price}`,
+    );
+    for (const a of p.accounts || []) {
+      lines.push(`   • <code>${esc(formatAccount(a))}</code>`);
+    }
+    lines.push("");
+  }
+  return sendMessage(chatId, lines.join("\n"), mainKb(env, uid));
+}
+
+
 async function runBroadcast(env: Env, adminChatId: number, bcastText: string) {
   const uids = Object.keys(env.state.users);
   let sent = 0,
@@ -1406,7 +1435,6 @@ async function ensureBotCommands() {
   _commandsRegistered = true;
   await setMyCommands([
     { command: "start", description: "ចាប់ផ្តើម" },
-    { command: "buy", description: "ទិញគូប៉ុង" },
   ]);
 }
 
