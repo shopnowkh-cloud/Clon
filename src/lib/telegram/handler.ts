@@ -1414,7 +1414,6 @@ async function ensureBotCommands() {
   _commandsRegistered = true;
   await setMyCommands([
     { command: "start", description: "ចាប់ផ្តើម" },
-    { command: "buy", description: "ទិញគូប៉ុង" },
   ]);
 }
 
