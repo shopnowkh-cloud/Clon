@@ -912,7 +912,11 @@ async function handleText(env: Env, msg: any) {
       "⏳ <b>សូមបញ្ចប់ការទូទាត់ QR ជាមុនសិន</b>\nឬចុច <b>🚫 បោះបង់</b> ដើម្បីបោះបង់",
       CHECK_PAYMENT_INLINE,
     );
-  await showAccountSelection(env, chatId);
+  await sendMessage(
+    chatId,
+    "❓ <b>ពាក្យបញ្ជាមិនត្រឹមត្រូវ</b>\n\nសូមជ្រើសរើសប្រតិបត្តិការខាងក្រោម៖",
+    mainKb(env, uid),
+  );
 }
 
 async function dispatchAdminButton(env: Env, chatId: number, uid: number, btn: string) {
