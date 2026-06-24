@@ -1209,6 +1209,27 @@ async function handleAdminInput(
   }
 }
 
+async function showUserHistory(env: Env, chatId: number, uid: number) {
+  const mine = env.state.purchases.filter((p) => Number(p.user_id) === Number(uid));
+  if (!mine.length) {
+    return sendMessage(chatId, "📋 <b>អ្នកមិនទាន់មានប្រវត្តិទិញនៅឡើយទេ</b>", mainKb(env, uid));
+  }
+  const lines: string[] = [`📋 <b>ប្រវត្តិទិញរបស់អ្នក (${mine.length})</b>`, ""];
+  const recent = mine.slice(-20).reverse();
+  for (const p of recent) {
+    lines.push(
+      `🗓 ${fmtKH(p.purchased_at)}\n` +
+        `📦 ${esc(p.account_type)} × ${p.quantity}  💵 $${p.total_price}`,
+    );
+    for (const a of p.accounts || []) {
+      lines.push(`   • <code>${esc(formatAccount(a))}</code>`);
+    }
+    lines.push("");
+  }
+  return sendMessage(chatId, lines.join("\n"), mainKb(env, uid));
+}
+
+
 async function runBroadcast(env: Env, adminChatId: number, bcastText: string) {
   const uids = Object.keys(env.state.users);
   let sent = 0,
