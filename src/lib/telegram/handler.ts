@@ -93,7 +93,7 @@ const ADMIN_BUTTON_LABELS = new Set([
 ]);
 
 const USER_KB = Markup.keyboard([[BTN_BUY], [BTN_HOWTO, BTN_HISTORY]]);
-const ADMIN_KB = Markup.keyboard([[BTN_BUY], [BTN_HOWTO, BTN_HISTORY], [ADMIN_SETTINGS_BTN]]);
+const ADMIN_KB = Markup.keyboard([[BTN_BUY], [BTN_HOWTO, BTN_HISTORY]]);
 const ADMIN_SETTINGS_KB = {
   reply_markup: {
     keyboard: [
