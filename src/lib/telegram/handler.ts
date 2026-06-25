@@ -1106,6 +1106,17 @@ async function dispatchAdminButton(env: Env, chatId: number, uid: number, btn: s
       env.state.settings.BUTTON_THEME = activeTheme;
       return sendMessage(chatId, `✅ បានកំណត់ពណ៌៖ <code>${activeTheme}</code>`, ADMIN_SETTINGS_KB());
     }
+    case BTN_THEME_PER: {
+      env.state.sessions[String(uid)] = { state: "admin_input:btn_style_pick" };
+      const summary = Object.keys(buttonStyles).length
+        ? Object.entries(buttonStyles).map(([k, v]) => `• ${esc(k)} → <code>${v}</code>`).join("\n")
+        : "<i>(មិនទាន់​មាន​ការ​កំណត់)</i>";
+      return sendMessage(
+        chatId,
+        `✏️ <b>កំណត់ពណ៌ប៊ូតុងនីមួយៗ</b>\n\nការកំណត់បច្ចុប្បន្ន៖\n${summary}\n\nសូមជ្រើសរើស​ប៊ូតុង​ដែល​ចង់​ប្តូរ​ពណ៌៖`,
+        PER_BUTTON_PICK_KB(),
+      );
+    }
     case BTN_MAINTENANCE: {
       const status = env.maintenance ? "🔴 បិទ" : "🟢 បើក";
       return sendMessage(
