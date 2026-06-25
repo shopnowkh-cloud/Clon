@@ -743,7 +743,7 @@ async function handleText(env: Env, msg: any) {
         return sendMessage(
           chatId,
           `⚠️ <b>តើអ្នកពិតជាចង់លុបប្រភេទ គូប៉ុង នេះមែនទេ?</b>\n\n<blockquote>🔹 ប្រភេទ: ${esc(typeName)}\n🔹 ចំនួន: ${count}\n🔹 តម្លៃ: $${price}</blockquote>`,
-          Markup.keyboard([[BTN_DELETE_CONFIRM], [BTN_DELETE_CANCEL]]),
+          Markup.keyboard([[{ text: BTN_DELETE_CONFIRM, style: "success" }], [{ text: BTN_DELETE_CANCEL, style: "danger" }]] as any),
         );
       }
       return;
