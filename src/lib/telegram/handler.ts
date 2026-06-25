@@ -238,6 +238,18 @@ function envFromState(state: BotState): Env {
   }
   const t = state.settings.BUTTON_THEME as ThemeMode | undefined;
   activeTheme = t && ["auto","success","primary","danger","default"].includes(t) ? t : "auto";
+  buttonStyles = {};
+  try {
+    const raw = state.settings.BUTTON_STYLES;
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === "object") {
+        for (const [k, v] of Object.entries(parsed)) {
+          if (typeof v === "string" && VALID_STYLES.includes(v as BtnStyle)) buttonStyles[k] = v as BtnStyle;
+        }
+      }
+    }
+  } catch { /* ignore */ }
   return {
     state,
     extraAdmins: extras,
