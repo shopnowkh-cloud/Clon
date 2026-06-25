@@ -109,62 +109,101 @@ const ADMIN_KB = USER_KB;
 type BtnStyle = "success" | "primary" | "danger" | "default";
 type ThemeMode = "auto" | BtnStyle;
 let activeTheme: ThemeMode = "auto";
-const ts = (def: BtnStyle): BtnStyle => (activeTheme === "auto" ? def : activeTheme);
+let buttonStyles: Record<string, BtnStyle> = {};
+const VALID_STYLES: BtnStyle[] = ["success", "primary", "danger", "default"];
+// Per-button override > global theme > built-in default.
+const ts = (def: BtnStyle, label?: string): BtnStyle => {
+  if (label && buttonStyles[label] && VALID_STYLES.includes(buttonStyles[label])) return buttonStyles[label];
+  return activeTheme === "auto" ? def : activeTheme;
+};
+const b = (text: string, def: BtnStyle) => ({ text, style: ts(def, text) });
 
 const ADMIN_SETTINGS_KB = () => ({
   reply_markup: {
     keyboard: [
-      [{ text: BTN_ADD_ACCOUNT, style: ts("success") }, { text: BTN_DELETE_TYPE, style: ts("danger") }],
-      [{ text: BTN_STOCK, style: ts("primary") }, { text: BTN_BUYERS, style: ts("primary") }],
-      [{ text: BTN_USERS, style: ts("primary") }, { text: BTN_KHPAY, style: ts("default") }],
-      [{ text: BTN_CHANNEL, style: ts("default") }, { text: BTN_ADMINS, style: ts("default") }],
-      [{ text: BTN_BROADCAST, style: ts("success") }, { text: BTN_BUY_VIDEO, style: ts("success") }],
-      [{ text: BTN_THEME, style: ts("primary") }, { text: BTN_MAINTENANCE, style: ts("danger") }],
+      [b(BTN_ADD_ACCOUNT, "success"), b(BTN_DELETE_TYPE, "danger")],
+      [b(BTN_STOCK, "primary"), b(BTN_BUYERS, "primary")],
+      [b(BTN_USERS, "primary"), b(BTN_KHPAY, "default")],
+      [b(BTN_CHANNEL, "default"), b(BTN_ADMINS, "default")],
+      [b(BTN_BROADCAST, "success"), b(BTN_BUY_VIDEO, "success")],
+      [b(BTN_THEME, "primary"), b(BTN_MAINTENANCE, "danger")],
     ],
     resize_keyboard: true,
     is_persistent: true,
   },
 });
-const CANCEL_INPUT_KB = () => Markup.keyboard([[{ text: BTN_CANCEL_INPUT, style: ts("danger") }]] as any);
-const ADD_ACCOUNT_KB = () => Markup.keyboard([[{ text: BTN_BACK_SETTINGS, style: ts("default") }]] as any);
-const BACK_SETTINGS_KB = () => Markup.keyboard([[{ text: BTN_BACK_SETTINGS, style: ts("default") }]] as any);
+const CANCEL_INPUT_KB = () => Markup.keyboard([[b(BTN_CANCEL_INPUT, "danger")]] as any);
+const ADD_ACCOUNT_KB = () => Markup.keyboard([[b(BTN_BACK_SETTINGS, "default")]] as any);
+const BACK_SETTINGS_KB = () => Markup.keyboard([[b(BTN_BACK_SETTINGS, "default")]] as any);
 const KHPAY_SUBMENU_KB = () => Markup.keyboard([
-  [{ text: BTN_KHPAY_KEY_EDIT, style: ts("success") }, { text: BTN_KHPAY_INFO, style: ts("primary") }],
-  [{ text: BTN_BACK_SETTINGS, style: ts("default") }],
+  [b(BTN_KHPAY_KEY_EDIT, "success"), b(BTN_KHPAY_INFO, "primary")],
+  [b(BTN_BACK_SETTINGS, "default")],
 ] as any);
 const CHANNEL_SUBMENU_KB = () => Markup.keyboard([
-  [{ text: BTN_CHANNEL_EDIT, style: ts("success") }, { text: BTN_CHANNEL_CLEAR, style: ts("danger") }],
-  [{ text: BTN_BACK_SETTINGS, style: ts("default") }],
+  [b(BTN_CHANNEL_EDIT, "success"), b(BTN_CHANNEL_CLEAR, "danger")],
+  [b(BTN_BACK_SETTINGS, "default")],
 ] as any);
 const ADMINS_SUBMENU_KB = () => Markup.keyboard([
-  [{ text: BTN_ADMIN_ADD, style: ts("success") }, { text: BTN_ADMIN_REMOVE, style: ts("danger") }],
-  [{ text: BTN_BACK_SETTINGS, style: ts("default") }],
+  [b(BTN_ADMIN_ADD, "success"), b(BTN_ADMIN_REMOVE, "danger")],
+  [b(BTN_BACK_SETTINGS, "default")],
 ] as any);
 const MAINTENANCE_SUBMENU_KB = () => Markup.keyboard([
-  [{ text: BTN_MAINT_ON, style: ts("danger") }, { text: BTN_MAINT_OFF, style: ts("success") }],
-  [{ text: BTN_BACK_SETTINGS, style: ts("default") }],
+  [b(BTN_MAINT_ON, "danger"), b(BTN_MAINT_OFF, "success")],
+  [b(BTN_BACK_SETTINGS, "default")],
 ] as any);
 const VIDEO_SUBMENU_KB = () => Markup.keyboard([
-  [{ text: BTN_VIDEO_EDIT, style: ts("success") }, { text: BTN_VIDEO_CLEAR, style: ts("danger") }],
-  [{ text: BTN_BACK_SETTINGS, style: ts("default") }],
+  [b(BTN_VIDEO_EDIT, "success"), b(BTN_VIDEO_CLEAR, "danger")],
+  [b(BTN_BACK_SETTINGS, "default")],
 ] as any);
 const USERS_SUBMENU_KB = () => Markup.keyboard([
-  [{ text: BTN_USER_ADD, style: ts("success") }],
-  [{ text: BTN_BACK_SETTINGS, style: ts("default") }],
+  [b(BTN_USER_ADD, "success")],
+  [b(BTN_BACK_SETTINGS, "default")],
 ] as any);
 const BUYERS_SUBMENU_KB = () => Markup.keyboard([
-  [{ text: BTN_PURCHASE_ADD, style: ts("success") }],
-  [{ text: BTN_BACK_SETTINGS, style: ts("default") }],
+  [b(BTN_PURCHASE_ADD, "success")],
+  [b(BTN_BACK_SETTINGS, "default")],
 ] as any);
 const BROADCAST_CONFIRM_KB = () => Markup.keyboard([
-  [{ text: BTN_BROADCAST_CONFIRM, style: ts("success") }],
-  [{ text: BTN_BROADCAST_CANCEL, style: ts("danger") }],
+  [b(BTN_BROADCAST_CONFIRM, "success")],
+  [b(BTN_BROADCAST_CANCEL, "danger")],
 ] as any);
 const THEME_SUBMENU_KB = () => Markup.keyboard([
-  [{ text: BTN_THEME_AUTO, style: ts("primary") }],
+  [b(BTN_THEME_AUTO, "primary")],
   [{ text: BTN_THEME_SUCCESS, style: "success" }, { text: BTN_THEME_PRIMARY, style: "primary" }],
   [{ text: BTN_THEME_DANGER, style: "danger" }, { text: BTN_THEME_DEFAULT, style: "default" }],
-  [{ text: BTN_BACK_SETTINGS, style: ts("default") }],
+  [b(BTN_THEME_PER, "primary")],
+  [b(BTN_BACK_SETTINGS, "default")],
+] as any);
+
+// All customizable button labels (everything that appears in /settings menus).
+const CUSTOMIZABLE_BUTTONS: string[] = [
+  BTN_ADD_ACCOUNT, BTN_DELETE_TYPE, BTN_STOCK, BTN_BUYERS, BTN_USERS,
+  BTN_KHPAY, BTN_CHANNEL, BTN_ADMINS, BTN_BROADCAST, BTN_BUY_VIDEO,
+  BTN_THEME, BTN_MAINTENANCE, BTN_BACK_SETTINGS,
+  BTN_KHPAY_KEY_EDIT, BTN_KHPAY_INFO,
+  BTN_CHANNEL_EDIT, BTN_CHANNEL_CLEAR,
+  BTN_ADMIN_ADD, BTN_ADMIN_REMOVE,
+  BTN_MAINT_ON, BTN_MAINT_OFF,
+  BTN_VIDEO_EDIT, BTN_VIDEO_CLEAR,
+  BTN_USER_ADD, BTN_PURCHASE_ADD,
+  BTN_CANCEL_INPUT, BTN_DELETE_CONFIRM, BTN_DELETE_CANCEL,
+  BTN_BROADCAST_CONFIRM, BTN_BROADCAST_CANCEL,
+];
+const PER_BUTTON_PICK_KB = () => {
+  const rows: any[] = [];
+  for (let i = 0; i < CUSTOMIZABLE_BUTTONS.length; i += 2) {
+    const row = [b(CUSTOMIZABLE_BUTTONS[i], "default")];
+    if (CUSTOMIZABLE_BUTTONS[i + 1]) row.push(b(CUSTOMIZABLE_BUTTONS[i + 1], "default"));
+    rows.push(row);
+  }
+  rows.push([b(BTN_CANCEL_INPUT, "danger")]);
+  return Markup.keyboard(rows as any);
+};
+const COLOR_PICK_KB = () => Markup.keyboard([
+  [{ text: BTN_THEME_SUCCESS, style: "success" }, { text: BTN_THEME_PRIMARY, style: "primary" }],
+  [{ text: BTN_THEME_DANGER, style: "danger" }, { text: BTN_THEME_DEFAULT, style: "default" }],
+  [b(BTN_RESET_BTN_COLOR, "primary")],
+  [b(BTN_CANCEL_INPUT, "danger")],
 ] as any);
 const CHECK_PAYMENT_INLINE = {
   reply_markup: Markup.inlineKeyboard([[
