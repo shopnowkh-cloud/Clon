@@ -98,54 +98,66 @@ const USER_KB = Markup.keyboard([
 ] as any);
 const ADMIN_KB = USER_KB;
 // Bot API 9.4 keyboard button styles: success | primary | danger | default
-const ADMIN_SETTINGS_KB = {
+// Active theme override — "auto" keeps per-button styles; otherwise all buttons in /settings use the same style.
+type BtnStyle = "success" | "primary" | "danger" | "default";
+type ThemeMode = "auto" | BtnStyle;
+let activeTheme: ThemeMode = "auto";
+const ts = (def: BtnStyle): BtnStyle => (activeTheme === "auto" ? def : activeTheme);
+
+const ADMIN_SETTINGS_KB = () => ({
   reply_markup: {
     keyboard: [
-      [{ text: BTN_ADD_ACCOUNT, style: "success" }, { text: BTN_DELETE_TYPE, style: "danger" }],
-      [{ text: BTN_STOCK, style: "primary" }, { text: BTN_BUYERS, style: "primary" }],
-      [{ text: BTN_USERS, style: "primary" }, { text: BTN_KHPAY, style: "default" }],
-      [{ text: BTN_CHANNEL, style: "default" }, { text: BTN_ADMINS, style: "default" }],
-      [{ text: BTN_BROADCAST, style: "success" }, { text: BTN_BUY_VIDEO, style: "success" }],
-      [{ text: BTN_MAINTENANCE, style: "danger" }],
+      [{ text: BTN_ADD_ACCOUNT, style: ts("success") }, { text: BTN_DELETE_TYPE, style: ts("danger") }],
+      [{ text: BTN_STOCK, style: ts("primary") }, { text: BTN_BUYERS, style: ts("primary") }],
+      [{ text: BTN_USERS, style: ts("primary") }, { text: BTN_KHPAY, style: ts("default") }],
+      [{ text: BTN_CHANNEL, style: ts("default") }, { text: BTN_ADMINS, style: ts("default") }],
+      [{ text: BTN_BROADCAST, style: ts("success") }, { text: BTN_BUY_VIDEO, style: ts("success") }],
+      [{ text: BTN_THEME, style: ts("primary") }, { text: BTN_MAINTENANCE, style: ts("danger") }],
     ],
     resize_keyboard: true,
     is_persistent: true,
   },
-};
-const CANCEL_INPUT_KB = Markup.keyboard([[{ text: BTN_CANCEL_INPUT, style: "danger" }]] as any);
-const ADD_ACCOUNT_KB = Markup.keyboard([[{ text: BTN_BACK_SETTINGS, style: "default" }]] as any);
-const BACK_SETTINGS_KB = Markup.keyboard([[{ text: BTN_BACK_SETTINGS, style: "default" }]] as any);
-const KHPAY_SUBMENU_KB = Markup.keyboard([
-  [{ text: BTN_KHPAY_KEY_EDIT, style: "success" }, { text: BTN_KHPAY_INFO, style: "primary" }],
-  [{ text: BTN_BACK_SETTINGS, style: "default" }],
+});
+const CANCEL_INPUT_KB = () => Markup.keyboard([[{ text: BTN_CANCEL_INPUT, style: ts("danger") }]] as any);
+const ADD_ACCOUNT_KB = () => Markup.keyboard([[{ text: BTN_BACK_SETTINGS, style: ts("default") }]] as any);
+const BACK_SETTINGS_KB = () => Markup.keyboard([[{ text: BTN_BACK_SETTINGS, style: ts("default") }]] as any);
+const KHPAY_SUBMENU_KB = () => Markup.keyboard([
+  [{ text: BTN_KHPAY_KEY_EDIT, style: ts("success") }, { text: BTN_KHPAY_INFO, style: ts("primary") }],
+  [{ text: BTN_BACK_SETTINGS, style: ts("default") }],
 ] as any);
-const CHANNEL_SUBMENU_KB = Markup.keyboard([
-  [{ text: BTN_CHANNEL_EDIT, style: "success" }, { text: BTN_CHANNEL_CLEAR, style: "danger" }],
-  [{ text: BTN_BACK_SETTINGS, style: "default" }],
+const CHANNEL_SUBMENU_KB = () => Markup.keyboard([
+  [{ text: BTN_CHANNEL_EDIT, style: ts("success") }, { text: BTN_CHANNEL_CLEAR, style: ts("danger") }],
+  [{ text: BTN_BACK_SETTINGS, style: ts("default") }],
 ] as any);
-const ADMINS_SUBMENU_KB = Markup.keyboard([
-  [{ text: BTN_ADMIN_ADD, style: "success" }, { text: BTN_ADMIN_REMOVE, style: "danger" }],
-  [{ text: BTN_BACK_SETTINGS, style: "default" }],
+const ADMINS_SUBMENU_KB = () => Markup.keyboard([
+  [{ text: BTN_ADMIN_ADD, style: ts("success") }, { text: BTN_ADMIN_REMOVE, style: ts("danger") }],
+  [{ text: BTN_BACK_SETTINGS, style: ts("default") }],
 ] as any);
-const MAINTENANCE_SUBMENU_KB = Markup.keyboard([
-  [{ text: BTN_MAINT_ON, style: "danger" }, { text: BTN_MAINT_OFF, style: "success" }],
-  [{ text: BTN_BACK_SETTINGS, style: "default" }],
+const MAINTENANCE_SUBMENU_KB = () => Markup.keyboard([
+  [{ text: BTN_MAINT_ON, style: ts("danger") }, { text: BTN_MAINT_OFF, style: ts("success") }],
+  [{ text: BTN_BACK_SETTINGS, style: ts("default") }],
 ] as any);
-const VIDEO_SUBMENU_KB = Markup.keyboard([
-  [{ text: BTN_VIDEO_EDIT, style: "success" }, { text: BTN_VIDEO_CLEAR, style: "danger" }],
-  [{ text: BTN_BACK_SETTINGS, style: "default" }],
+const VIDEO_SUBMENU_KB = () => Markup.keyboard([
+  [{ text: BTN_VIDEO_EDIT, style: ts("success") }, { text: BTN_VIDEO_CLEAR, style: ts("danger") }],
+  [{ text: BTN_BACK_SETTINGS, style: ts("default") }],
 ] as any);
-const USERS_SUBMENU_KB = Markup.keyboard([
-  [{ text: BTN_USER_ADD, style: "success" }],
-  [{ text: BTN_BACK_SETTINGS, style: "default" }],
+const USERS_SUBMENU_KB = () => Markup.keyboard([
+  [{ text: BTN_USER_ADD, style: ts("success") }],
+  [{ text: BTN_BACK_SETTINGS, style: ts("default") }],
 ] as any);
-const BUYERS_SUBMENU_KB = Markup.keyboard([
-  [{ text: BTN_PURCHASE_ADD, style: "success" }],
-  [{ text: BTN_BACK_SETTINGS, style: "default" }],
+const BUYERS_SUBMENU_KB = () => Markup.keyboard([
+  [{ text: BTN_PURCHASE_ADD, style: ts("success") }],
+  [{ text: BTN_BACK_SETTINGS, style: ts("default") }],
 ] as any);
-const BROADCAST_CONFIRM_KB = Markup.keyboard([
-  [{ text: BTN_BROADCAST_CONFIRM, style: "success" }],
-  [{ text: BTN_BROADCAST_CANCEL, style: "danger" }],
+const BROADCAST_CONFIRM_KB = () => Markup.keyboard([
+  [{ text: BTN_BROADCAST_CONFIRM, style: ts("success") }],
+  [{ text: BTN_BROADCAST_CANCEL, style: ts("danger") }],
+] as any);
+const THEME_SUBMENU_KB = () => Markup.keyboard([
+  [{ text: BTN_THEME_AUTO, style: ts("primary") }],
+  [{ text: BTN_THEME_SUCCESS, style: "success" }, { text: BTN_THEME_PRIMARY, style: "primary" }],
+  [{ text: BTN_THEME_DANGER, style: "danger" }, { text: BTN_THEME_DEFAULT, style: "default" }],
+  [{ text: BTN_BACK_SETTINGS, style: ts("default") }],
 ] as any);
 const CHECK_PAYMENT_INLINE = {
   reply_markup: Markup.inlineKeyboard([[
