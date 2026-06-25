@@ -73,6 +73,12 @@ const BTN_USER_ADD = "➕ បន្ថែម User";
 const BTN_PURCHASE_ADD = "➕ បន្ថែម គូប៉ុង User";
 const BTN_VIDEO_EDIT = "✏️ ប្តូរ វីដេអូ";
 const BTN_VIDEO_CLEAR = "🗑 លុប វីដេអូ";
+const BTN_THEME = "🎨 ពណ៌ប៊ូតុង";
+const BTN_THEME_AUTO = "🌈 Auto (លាយ)";
+const BTN_THEME_SUCCESS = "🟢 Success";
+const BTN_THEME_PRIMARY = "🔵 Primary";
+const BTN_THEME_DANGER = "🔴 Danger";
+const BTN_THEME_DEFAULT = "⚪ Default";
 const ADMIN_SETTINGS_BTN = "/settings";
 
 // ---- User-facing buttons ----
