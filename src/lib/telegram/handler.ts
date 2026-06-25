@@ -194,6 +194,8 @@ function envFromState(state: BotState): Env {
       extras = new Set<number>(JSON.parse(ea).map((n: any) => Number(n)));
     } catch { /* ignore */ }
   }
+  const t = state.settings.BUTTON_THEME as ThemeMode | undefined;
+  activeTheme = t && ["auto","success","primary","danger","default"].includes(t) ? t : "auto";
   return {
     state,
     extraAdmins: extras,
