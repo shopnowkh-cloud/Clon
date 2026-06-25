@@ -73,6 +73,12 @@ const BTN_USER_ADD = "➕ បន្ថែម User";
 const BTN_PURCHASE_ADD = "➕ បន្ថែម គូប៉ុង User";
 const BTN_VIDEO_EDIT = "✏️ ប្តូរ វីដេអូ";
 const BTN_VIDEO_CLEAR = "🗑 លុប វីដេអូ";
+const BTN_THEME = "🎨 ពណ៌ប៊ូតុង";
+const BTN_THEME_AUTO = "🌈 Auto (លាយ)";
+const BTN_THEME_SUCCESS = "🟢 Success";
+const BTN_THEME_PRIMARY = "🔵 Primary";
+const BTN_THEME_DANGER = "🔴 Danger";
+const BTN_THEME_DEFAULT = "⚪ Default";
 const ADMIN_SETTINGS_BTN = "/settings";
 
 // ---- User-facing buttons ----
@@ -89,6 +95,7 @@ const ADMIN_BUTTON_LABELS = new Set([
   BTN_MAINT_ON, BTN_MAINT_OFF, BTN_CANCEL_INPUT,
   BTN_DELETE_CONFIRM, BTN_DELETE_CANCEL, BTN_BROADCAST_CONFIRM, BTN_BROADCAST_CANCEL,
   BTN_USER_ADD, BTN_PURCHASE_ADD, BTN_VIDEO_EDIT, BTN_VIDEO_CLEAR,
+  BTN_THEME, BTN_THEME_AUTO, BTN_THEME_SUCCESS, BTN_THEME_PRIMARY, BTN_THEME_DANGER, BTN_THEME_DEFAULT,
   ADMIN_SETTINGS_BTN,
 ]);
 
@@ -98,54 +105,66 @@ const USER_KB = Markup.keyboard([
 ] as any);
 const ADMIN_KB = USER_KB;
 // Bot API 9.4 keyboard button styles: success | primary | danger | default
-const ADMIN_SETTINGS_KB = {
+// Active theme override — "auto" keeps per-button styles; otherwise all buttons in /settings use the same style.
+type BtnStyle = "success" | "primary" | "danger" | "default";
+type ThemeMode = "auto" | BtnStyle;
+let activeTheme: ThemeMode = "auto";
+const ts = (def: BtnStyle): BtnStyle => (activeTheme === "auto" ? def : activeTheme);
+
+const ADMIN_SETTINGS_KB = () => ({
   reply_markup: {
     keyboard: [
-      [{ text: BTN_ADD_ACCOUNT, style: "success" }, { text: BTN_DELETE_TYPE, style: "danger" }],
-      [{ text: BTN_STOCK, style: "primary" }, { text: BTN_BUYERS, style: "primary" }],
-      [{ text: BTN_USERS, style: "primary" }, { text: BTN_KHPAY, style: "default" }],
-      [{ text: BTN_CHANNEL, style: "default" }, { text: BTN_ADMINS, style: "default" }],
-      [{ text: BTN_BROADCAST, style: "success" }, { text: BTN_BUY_VIDEO, style: "success" }],
-      [{ text: BTN_MAINTENANCE, style: "danger" }],
+      [{ text: BTN_ADD_ACCOUNT, style: ts("success") }, { text: BTN_DELETE_TYPE, style: ts("danger") }],
+      [{ text: BTN_STOCK, style: ts("primary") }, { text: BTN_BUYERS, style: ts("primary") }],
+      [{ text: BTN_USERS, style: ts("primary") }, { text: BTN_KHPAY, style: ts("default") }],
+      [{ text: BTN_CHANNEL, style: ts("default") }, { text: BTN_ADMINS, style: ts("default") }],
+      [{ text: BTN_BROADCAST, style: ts("success") }, { text: BTN_BUY_VIDEO, style: ts("success") }],
+      [{ text: BTN_THEME, style: ts("primary") }, { text: BTN_MAINTENANCE, style: ts("danger") }],
     ],
     resize_keyboard: true,
     is_persistent: true,
   },
-};
-const CANCEL_INPUT_KB = Markup.keyboard([[{ text: BTN_CANCEL_INPUT, style: "danger" }]] as any);
-const ADD_ACCOUNT_KB = Markup.keyboard([[{ text: BTN_BACK_SETTINGS, style: "default" }]] as any);
-const BACK_SETTINGS_KB = Markup.keyboard([[{ text: BTN_BACK_SETTINGS, style: "default" }]] as any);
-const KHPAY_SUBMENU_KB = Markup.keyboard([
-  [{ text: BTN_KHPAY_KEY_EDIT, style: "success" }, { text: BTN_KHPAY_INFO, style: "primary" }],
-  [{ text: BTN_BACK_SETTINGS, style: "default" }],
+});
+const CANCEL_INPUT_KB = () => Markup.keyboard([[{ text: BTN_CANCEL_INPUT, style: ts("danger") }]] as any);
+const ADD_ACCOUNT_KB = () => Markup.keyboard([[{ text: BTN_BACK_SETTINGS, style: ts("default") }]] as any);
+const BACK_SETTINGS_KB = () => Markup.keyboard([[{ text: BTN_BACK_SETTINGS, style: ts("default") }]] as any);
+const KHPAY_SUBMENU_KB = () => Markup.keyboard([
+  [{ text: BTN_KHPAY_KEY_EDIT, style: ts("success") }, { text: BTN_KHPAY_INFO, style: ts("primary") }],
+  [{ text: BTN_BACK_SETTINGS, style: ts("default") }],
 ] as any);
-const CHANNEL_SUBMENU_KB = Markup.keyboard([
-  [{ text: BTN_CHANNEL_EDIT, style: "success" }, { text: BTN_CHANNEL_CLEAR, style: "danger" }],
-  [{ text: BTN_BACK_SETTINGS, style: "default" }],
+const CHANNEL_SUBMENU_KB = () => Markup.keyboard([
+  [{ text: BTN_CHANNEL_EDIT, style: ts("success") }, { text: BTN_CHANNEL_CLEAR, style: ts("danger") }],
+  [{ text: BTN_BACK_SETTINGS, style: ts("default") }],
 ] as any);
-const ADMINS_SUBMENU_KB = Markup.keyboard([
-  [{ text: BTN_ADMIN_ADD, style: "success" }, { text: BTN_ADMIN_REMOVE, style: "danger" }],
-  [{ text: BTN_BACK_SETTINGS, style: "default" }],
+const ADMINS_SUBMENU_KB = () => Markup.keyboard([
+  [{ text: BTN_ADMIN_ADD, style: ts("success") }, { text: BTN_ADMIN_REMOVE, style: ts("danger") }],
+  [{ text: BTN_BACK_SETTINGS, style: ts("default") }],
 ] as any);
-const MAINTENANCE_SUBMENU_KB = Markup.keyboard([
-  [{ text: BTN_MAINT_ON, style: "danger" }, { text: BTN_MAINT_OFF, style: "success" }],
-  [{ text: BTN_BACK_SETTINGS, style: "default" }],
+const MAINTENANCE_SUBMENU_KB = () => Markup.keyboard([
+  [{ text: BTN_MAINT_ON, style: ts("danger") }, { text: BTN_MAINT_OFF, style: ts("success") }],
+  [{ text: BTN_BACK_SETTINGS, style: ts("default") }],
 ] as any);
-const VIDEO_SUBMENU_KB = Markup.keyboard([
-  [{ text: BTN_VIDEO_EDIT, style: "success" }, { text: BTN_VIDEO_CLEAR, style: "danger" }],
-  [{ text: BTN_BACK_SETTINGS, style: "default" }],
+const VIDEO_SUBMENU_KB = () => Markup.keyboard([
+  [{ text: BTN_VIDEO_EDIT, style: ts("success") }, { text: BTN_VIDEO_CLEAR, style: ts("danger") }],
+  [{ text: BTN_BACK_SETTINGS, style: ts("default") }],
 ] as any);
-const USERS_SUBMENU_KB = Markup.keyboard([
-  [{ text: BTN_USER_ADD, style: "success" }],
-  [{ text: BTN_BACK_SETTINGS, style: "default" }],
+const USERS_SUBMENU_KB = () => Markup.keyboard([
+  [{ text: BTN_USER_ADD, style: ts("success") }],
+  [{ text: BTN_BACK_SETTINGS, style: ts("default") }],
 ] as any);
-const BUYERS_SUBMENU_KB = Markup.keyboard([
-  [{ text: BTN_PURCHASE_ADD, style: "success" }],
-  [{ text: BTN_BACK_SETTINGS, style: "default" }],
+const BUYERS_SUBMENU_KB = () => Markup.keyboard([
+  [{ text: BTN_PURCHASE_ADD, style: ts("success") }],
+  [{ text: BTN_BACK_SETTINGS, style: ts("default") }],
 ] as any);
-const BROADCAST_CONFIRM_KB = Markup.keyboard([
-  [{ text: BTN_BROADCAST_CONFIRM, style: "success" }],
-  [{ text: BTN_BROADCAST_CANCEL, style: "danger" }],
+const BROADCAST_CONFIRM_KB = () => Markup.keyboard([
+  [{ text: BTN_BROADCAST_CONFIRM, style: ts("success") }],
+  [{ text: BTN_BROADCAST_CANCEL, style: ts("danger") }],
+] as any);
+const THEME_SUBMENU_KB = () => Markup.keyboard([
+  [{ text: BTN_THEME_AUTO, style: ts("primary") }],
+  [{ text: BTN_THEME_SUCCESS, style: "success" }, { text: BTN_THEME_PRIMARY, style: "primary" }],
+  [{ text: BTN_THEME_DANGER, style: "danger" }, { text: BTN_THEME_DEFAULT, style: "default" }],
+  [{ text: BTN_BACK_SETTINGS, style: ts("default") }],
 ] as any);
 const CHECK_PAYMENT_INLINE = {
   reply_markup: Markup.inlineKeyboard([[
@@ -175,6 +194,8 @@ function envFromState(state: BotState): Env {
       extras = new Set<number>(JSON.parse(ea).map((n: any) => Number(n)));
     } catch { /* ignore */ }
   }
+  const t = state.settings.BUTTON_THEME as ThemeMode | undefined;
+  activeTheme = t && ["auto","success","primary","danger","default"].includes(t) ? t : "auto";
   return {
     state,
     extraAdmins: extras,
@@ -360,7 +381,7 @@ async function sendAdminSettingsMenu(chatId: number) {
   await sendMessage(
     chatId,
     "<b>⚙️ ការកំណត់ Admin</b>\n\nសូមជ្រើសរើសប្រតិបត្តិការខាងក្រោម៖",
-    ADMIN_SETTINGS_KB,
+    ADMIN_SETTINGS_KB(),
   );
 }
 
@@ -758,19 +779,19 @@ async function handleText(env: Env, msg: any) {
         return sendMessage(
           chatId,
           `✅ <b>បានលុបប្រភេទ <code>${esc(typeName)}</code> ចំនួន ${count} records!</b>`,
-          ADMIN_SETTINGS_KB,
+          ADMIN_SETTINGS_KB(),
         );
       }
-      return sendMessage(chatId, "🚫 <b>បានបោះបង់ការលុប</b>", ADMIN_SETTINGS_KB);
+      return sendMessage(chatId, "🚫 <b>បានបោះបង់ការលុប</b>", ADMIN_SETTINGS_KB());
     }
     if (state === "broadcast_confirm") {
       const bcastText = sess.broadcast_text || "";
       delete env.state.sessions[String(uid)];
       if (text === BTN_BROADCAST_CONFIRM && bcastText) {
-        await sendMessage(chatId, "📢 កំពុង​ផ្សាយ​សារ ... សូមរង់ចាំ", ADMIN_SETTINGS_KB);
+        await sendMessage(chatId, "📢 កំពុង​ផ្សាយ​សារ ... សូមរង់ចាំ", ADMIN_SETTINGS_KB());
         await runBroadcast(env, chatId, bcastText);
       } else {
-        await sendMessage(chatId, "🚫 <b>បាន​បោះបង់​ការ​ផ្សាយ</b>", ADMIN_SETTINGS_KB);
+        await sendMessage(chatId, "🚫 <b>បាន​បោះបង់​ការ​ផ្សាយ</b>", ADMIN_SETTINGS_KB());
       }
       return;
     }
@@ -781,7 +802,7 @@ async function handleText(env: Env, msg: any) {
       }
       const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
       if (!lines.length)
-        return sendMessage(chatId, "<b>អ៊ីមែលមិនត្រឹមត្រូវតាមទម្រង់</b>", ADD_ACCOUNT_KB);
+        return sendMessage(chatId, "<b>អ៊ីមែលមិនត្រឹមត្រូវតាមទម្រង់</b>", ADD_ACCOUNT_KB());
       const seen = new Set<string>();
       const batchDupes: string[] = [];
       const uniqueLines: string[] = [];
@@ -794,7 +815,7 @@ async function handleText(env: Env, msg: any) {
         return sendMessage(
           chatId,
           "❌ <b>គូប៉ុងទាំងអស់ដូចគ្នា!</b>\n\nសូមបញ្ចូលគូប៉ុងខុសៗគ្នា។",
-          ADD_ACCOUNT_KB,
+          ADD_ACCOUNT_KB(),
         );
       const newAccounts: AccountItem[] = uniqueLines.map((l) => {
         if (l.includes("|")) {
@@ -824,12 +845,12 @@ async function handleText(env: Env, msg: any) {
         return sendMessage(
           chatId,
           `<b>ប្រភេទ <code>${esc(text)}</code> មានស្រាប់ ដែលមានតម្លៃ ${existingPrice}$\n\nតម្លៃត្រូវតែដូចគ្នា (${existingPrice}$) ដើម្បីបន្ថែម គូប៉ុង</b>`,
-          ADD_ACCOUNT_KB,
+          ADD_ACCOUNT_KB(),
         );
       return sendMessage(
         chatId,
         `<b>សូមដាក់តម្លៃក្នុងប្រភេទ គូប៉ុង ${esc(text)}</b>`,
-        ADD_ACCOUNT_KB,
+        ADD_ACCOUNT_KB(),
       );
     }
     if (state === "waiting_for_price") {
@@ -850,7 +871,7 @@ async function handleText(env: Env, msg: any) {
         return sendMessage(
           chatId,
           `❌ <b>មិនអាចបញ្ចូលបាន!</b>\n\nប្រភេទ <code>${esc(accountType)}</code> មានតម្លៃ <b>${existingPrice}$</b> ស្រាប់។\nតម្លៃ <b>${price}$</b> មិនដូចគ្នា។ សូមប្រើ <b>${existingPrice}$</b>`,
-          ADD_ACCOUNT_KB,
+          ADD_ACCOUNT_KB(),
         );
       }
       const keyOf = (a: any) =>
@@ -927,7 +948,7 @@ async function dispatchAdminButton(env: Env, chatId: number, uid: number, btn: s
   switch (btn) {
     case BTN_ADD_ACCOUNT:
       env.state.sessions[String(uid)] = { state: "waiting_for_accounts" };
-      return sendMessage(chatId, "<b>បញ្ចូលគូប៉ុងសម្រាប់លក់</b>", ADD_ACCOUNT_KB);
+      return sendMessage(chatId, "<b>បញ្ចូលគូប៉ុងសម្រាប់លក់</b>", ADD_ACCOUNT_KB());
     case BTN_DELETE_TYPE: {
       const types = Object.keys(env.state.accounts.account_types);
       if (!types.length)
@@ -954,14 +975,14 @@ async function dispatchAdminButton(env: Env, chatId: number, uid: number, btn: s
       return sendMessage(
         chatId,
         `💰 <b>Cambo API Token បច្ចុប្បន្ន៖</b>\n\n<code>${esc(env.camboToken)}</code>`,
-        KHPAY_SUBMENU_KB,
+        KHPAY_SUBMENU_KB(),
       );
     case BTN_KHPAY_KEY_EDIT:
       env.state.sessions[String(uid)] = { state: "admin_input:khpay_key" };
       return sendMessage(
         chatId,
         "💰 សូមផ្ញើ <b>Cambo API Token</b> ថ្មី:\n\n<i>ចុច 🚫 បោះបង់ ដើម្បីបោះបង់</i>",
-        CANCEL_INPUT_KB,
+        CANCEL_INPUT_KB(),
       );
     case BTN_KHPAY_INFO: return sendKhpayInfo(env, chatId);
     case BTN_CHANNEL: {
@@ -969,7 +990,7 @@ async function dispatchAdminButton(env: Env, chatId: number, uid: number, btn: s
       return sendMessage(
         chatId,
         `📢 <b>Channel ID បច្ចុប្បន្ន៖</b>\n<code>${esc(String(cur))}</code>`,
-        CHANNEL_SUBMENU_KB,
+        CHANNEL_SUBMENU_KB(),
       );
     }
     case BTN_CHANNEL_EDIT:
@@ -977,11 +998,11 @@ async function dispatchAdminButton(env: Env, chatId: number, uid: number, btn: s
       return sendMessage(
         chatId,
         "📢 សូមផ្ញើ <b>Channel ID</b> ថ្មី (ឧ. <code>-1001234567890</code>):\n\n<i>ចុច 🚫 បោះបង់ ដើម្បីបោះបង់</i>",
-        CANCEL_INPUT_KB,
+        CANCEL_INPUT_KB(),
       );
     case BTN_CHANNEL_CLEAR:
       env.channelId = "";
-      return sendMessage(chatId, "✅ បានលុប Channel ID", ADMIN_SETTINGS_KB);
+      return sendMessage(chatId, "✅ បានលុប Channel ID", ADMIN_SETTINGS_KB());
     case BTN_ADMINS: {
       const extras = [...env.extraAdmins].sort();
       const extrasStr = extras.length
@@ -990,7 +1011,7 @@ async function dispatchAdminButton(env: Env, chatId: number, uid: number, btn: s
       return sendMessage(
         chatId,
         `👑 <b>Admin បឋម៖</b> <code>${ADMIN_ID}</code>\n\n➕ <b>Admin បន្ថែម៖</b>\n${extrasStr}`,
-        ADMINS_SUBMENU_KB,
+        ADMINS_SUBMENU_KB(),
       );
     }
     case BTN_ADMIN_ADD:
@@ -998,35 +1019,59 @@ async function dispatchAdminButton(env: Env, chatId: number, uid: number, btn: s
       return sendMessage(
         chatId,
         "➕ សូមផ្ញើ <b>Telegram User ID</b> ដែលចង់បន្ថែម:",
-        CANCEL_INPUT_KB,
+        CANCEL_INPUT_KB(),
       );
     case BTN_ADMIN_REMOVE:
       env.state.sessions[String(uid)] = { state: "admin_input:admin_remove" };
       return sendMessage(
         chatId,
         "➖ សូមផ្ញើ <b>Telegram User ID</b> ដែលចង់ដក:",
-        CANCEL_INPUT_KB,
+        CANCEL_INPUT_KB(),
       );
+    case BTN_THEME: {
+      const cur = activeTheme;
+      return sendMessage(
+        chatId,
+        `🎨 <b>ពណ៌ប៊ូតុង /settings</b>\n\nបច្ចុប្បន្ន៖ <code>${cur}</code>\n\nជ្រើសរើស color scheme៖`,
+        THEME_SUBMENU_KB(),
+      );
+    }
+    case BTN_THEME_AUTO:
+    case BTN_THEME_SUCCESS:
+    case BTN_THEME_PRIMARY:
+    case BTN_THEME_DANGER:
+    case BTN_THEME_DEFAULT: {
+      const map: Record<string, ThemeMode> = {
+        [BTN_THEME_AUTO]: "auto",
+        [BTN_THEME_SUCCESS]: "success",
+        [BTN_THEME_PRIMARY]: "primary",
+        [BTN_THEME_DANGER]: "danger",
+        [BTN_THEME_DEFAULT]: "default",
+      };
+      activeTheme = map[btn];
+      env.state.settings.BUTTON_THEME = activeTheme;
+      return sendMessage(chatId, `✅ បានកំណត់ពណ៌៖ <code>${activeTheme}</code>`, ADMIN_SETTINGS_KB());
+    }
     case BTN_MAINTENANCE: {
       const status = env.maintenance ? "🔴 បិទ" : "🟢 បើក";
       return sendMessage(
         chatId,
         `🛠 <b>ស្ថានភាព Bot បច្ចុប្បន្ន៖</b> ${status}`,
-        MAINTENANCE_SUBMENU_KB,
+        MAINTENANCE_SUBMENU_KB(),
       );
     }
     case BTN_MAINT_ON:
       env.maintenance = true;
-      return sendMessage(chatId, "🔴 បានបិទ Bot", ADMIN_SETTINGS_KB);
+      return sendMessage(chatId, "🔴 បានបិទ Bot", ADMIN_SETTINGS_KB());
     case BTN_MAINT_OFF:
       env.maintenance = false;
-      return sendMessage(chatId, "🟢 បានបើក Bot", ADMIN_SETTINGS_KB);
+      return sendMessage(chatId, "🟢 បានបើក Bot", ADMIN_SETTINGS_KB());
     case BTN_BROADCAST:
       env.state.sessions[String(uid)] = { state: "admin_input:broadcast" };
       return sendMessage(
         chatId,
         "📢 សូមផ្ញើ​សារ​ដែល​ចង់​ផ្សាយ​ទៅ​អ្នក​ប្រើ​ប្រាស់​ទាំង​អស់៖\n\n<i>ចុច 🚫 បោះបង់ ដើម្បីបោះបង់</i>",
-        CANCEL_INPUT_KB,
+        CANCEL_INPUT_KB(),
       );
     case BTN_BUY_VIDEO: {
       const list = getBuyVideos(env);
@@ -1036,7 +1081,7 @@ async function dispatchAdminButton(env: Env, chatId: number, uid: number, btn: s
       return sendMessage(
         chatId,
         `🎬 <b>វីដេអូ /buy បច្ចុប្បន្ន (${list.length})៖</b>\n${summary}`,
-        VIDEO_SUBMENU_KB,
+        VIDEO_SUBMENU_KB(),
       );
     }
     case BTN_VIDEO_EDIT:
@@ -1044,25 +1089,25 @@ async function dispatchAdminButton(env: Env, chatId: number, uid: number, btn: s
       return sendMessage(
         chatId,
         "🎬 សូម​ផ្ញើ <b>វីដេអូ</b> (upload) ឬ <b>URL</b> / <b>file_id</b> ដើម្បី​បន្ថែម​ចូល​បញ្ជី។\n\n<i>អាច​ផ្ញើ​បាន​ច្រើន​ដង​ជាប់​គ្នា។ ចុច 🚫 បោះបង់ ពេល​ចប់</i>",
-        CANCEL_INPUT_KB,
+        CANCEL_INPUT_KB(),
       );
     case BTN_VIDEO_CLEAR:
       setBuyVideos(env, []);
-      return sendMessage(chatId, "✅ បានលុបវីដេអូ /buy ទាំងអស់", ADMIN_SETTINGS_KB);
+      return sendMessage(chatId, "✅ បានលុបវីដេអូ /buy ទាំងអស់", ADMIN_SETTINGS_KB());
 
     case BTN_USER_ADD:
       env.state.sessions[String(uid)] = { state: "admin_input:user_add" };
       return sendMessage(
         chatId,
         "👤 សូមផ្ញើ <b>Telegram User ID</b> (ឬ <code>id|name|@username</code>) ដែលចង់បន្ថែម ដើម្បីទទួលការផ្សាយ:\n\n<i>ចុច 🚫 បោះបង់ ដើម្បីបោះបង់</i>",
-        CANCEL_INPUT_KB,
+        CANCEL_INPUT_KB(),
       );
     case BTN_PURCHASE_ADD:
       env.state.sessions[String(uid)] = { state: "admin_input:purchase_add" };
       return sendMessage(
         chatId,
         "📋 សូមផ្ញើ <code>user_id|email_ឬ_code|ប្រភេទ</code>\n\n<i>ឧ. <code>123456789|user@gmail.com|Spotify</code></i>\n\n<i>User នេះនឹងទទួល SMS E-GetS ដែលផ្ញើទៅ email នេះ</i>",
-        CANCEL_INPUT_KB,
+        CANCEL_INPUT_KB(),
       );
     default:
       return sendAdminSettingsMenu(chatId);
@@ -1139,7 +1184,7 @@ async function handleAdminInput(
     return sendMessage(
       chatId,
       `📢 <b>ព្រមព្រៀងផ្សាយ:</b>\n\n${esc(text)}\n\n<i>ផ្សាយទៅអ្នកប្រើ ${Object.keys(env.state.users).length} នាក់</i>`,
-      BROADCAST_CONFIRM_KB,
+      BROADCAST_CONFIRM_KB(),
     );
   }
   if (key === "buy_video") {
@@ -1151,7 +1196,7 @@ async function handleAdminInput(
     return sendMessage(
       chatId,
       `✅ បានបន្ថែម (សរុប ${list.length})\n<code>${esc(text.slice(0, 80))}</code>\n\n<i>ផ្ញើ​បន្ត​ដើម្បី​បន្ថែម ឬ​ចុច 🚫 បោះបង់ ដើម្បី​ចប់</i>`,
-      CANCEL_INPUT_KB,
+      CANCEL_INPUT_KB(),
     );
   }
 
@@ -1173,7 +1218,7 @@ async function handleAdminInput(
     return sendMessage(
       chatId,
       `✅ បានបន្ថែម User <code>${target}</code> (${esc(nameRaw || "—")}) ទៅក្នុងបញ្ជី`,
-      ADMIN_SETTINGS_KB,
+      ADMIN_SETTINGS_KB(),
     );
   }
   if (key === "purchase_add") {
@@ -1211,7 +1256,7 @@ async function handleAdminInput(
     return sendMessage(
       chatId,
       `✅ បានភ្ជាប់ <code>${esc(ident)}</code> ទៅ User <code>${target}</code>\n\nUser នេះនឹងទទួល SMS E-GetS ពេលផ្ញើទៅ email នេះ`,
-      ADMIN_SETTINGS_KB,
+      ADMIN_SETTINGS_KB(),
     );
   }
 }
@@ -1263,7 +1308,7 @@ async function runBroadcast(env: Env, adminChatId: number, bcastText: string) {
       `✅ ផ្ញើ​ជោគជ័យ:   ${sent}\n` +
       `⛔ បាន​ប្លុក/លុប:  ${blocked}\n` +
       `❌ បរាជ័យ:        ${failed}`,
-    ADMIN_SETTINGS_KB,
+    ADMIN_SETTINGS_KB(),
   );
 }
 
@@ -1272,7 +1317,7 @@ async function exportStock(env: Env, chatId: number) {
   const prices = env.state.accounts.prices;
   const names = Object.keys(types).sort();
   if (!names.length)
-    return sendMessage(chatId, "📦 មិនមានប្រភេទ គូប៉ុង ឡើយទេ។", ADMIN_SETTINGS_KB);
+    return sendMessage(chatId, "📦 មិនមានប្រភេទ គូប៉ុង ឡើយទេ។", ADMIN_SETTINGS_KB());
   const totalAvail = names.reduce((s, t) => s + (types[t] || []).length, 0);
   const W = 60;
   const lines = [
@@ -1304,7 +1349,7 @@ async function exportStock(env: Env, chatId: number) {
 
 async function exportBuyers(env: Env, chatId: number) {
   if (!env.state.purchases.length)
-    return sendMessage(chatId, "មិនមានទិន្នន័យ​ទិញ​នៅឡើយ​ទេ។", ADMIN_SETTINGS_KB);
+    return sendMessage(chatId, "មិនមានទិន្នន័យ​ទិញ​នៅឡើយ​ទេ។", ADMIN_SETTINGS_KB());
   const grouped: Record<string, { first_name: string; last_name: string; username: string; purchases: typeof env.state.purchases }> = {};
   for (const p of env.state.purchases) {
     const uid = String(p.user_id);
@@ -1355,7 +1400,7 @@ async function exportBuyers(env: Env, chatId: number) {
   await sendMessage(
     chatId,
     "📋 <b>របាយការណ៍ទិញ</b>\n\nចុច <b>➕ បន្ថែម គូប៉ុង User</b> ដើម្បីភ្ជាប់ email/code ទៅ User សម្រាប់ទទួល SMS E-GetS",
-    BUYERS_SUBMENU_KB,
+    BUYERS_SUBMENU_KB(),
   );
 }
 
@@ -1365,7 +1410,7 @@ async function showUsersList(env: Env, chatId: number) {
     return sendMessage(
       chatId,
       "📭 <b>មិនទាន់មានអ្នកប្រើប្រាស់ទេ។</b>\n\nចុច <b>➕ បន្ថែម User</b> ដើម្បីបន្ថែមដោយដៃ",
-      USERS_SUBMENU_KB,
+      USERS_SUBMENU_KB(),
     );
   const lines: string[] = [`👥 អ្នកប្រើប្រាស់សរុប: ${rows.length}`, ""];
   for (const [uid, info] of rows) {
@@ -1383,7 +1428,7 @@ async function showUsersList(env: Env, chatId: number) {
   return sendMessage(
     chatId,
     "ចុច <b>➕ បន្ថែម User</b> ដើម្បីបន្ថែម User ថ្មីសម្រាប់ផ្សាយ",
-    USERS_SUBMENU_KB,
+    USERS_SUBMENU_KB(),
   );
 }
 
@@ -1401,7 +1446,7 @@ async function sendKhpayInfo(env: Env, chatId: number) {
     `✅ <b>Generate QR:</b> type=generate_qr`,
     `✅ <b>Check MD5:</b> type=check_md5`,
   ];
-  return sendMessage(chatId, lines.join("\n"), KHPAY_SUBMENU_KB);
+  return sendMessage(chatId, lines.join("\n"), KHPAY_SUBMENU_KB());
 }
 
 async function handleChannelPost(env: Env, post: any) {
