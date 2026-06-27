@@ -1559,14 +1559,21 @@ async function sendKhpayInfo(env: Env, chatId: number) {
   const short = token
     ? `<code>${esc(token.slice(0, 16))}…${esc(token.slice(-4))}</code>`
     : "❌ មិនទាន់កំណត់";
+  let account = "—";
+  try {
+    const me = await khpayRequest(env, "GET", "/me");
+    const d = me?.data ?? me;
+    if (d) account = esc(d.email || d.name || d.account_id || JSON.stringify(d).slice(0, 80));
+  } catch { /* ignore */ }
   const lines = [
-    "💰 <b>Cambo Payment Info</b>",
+    "💰 <b>KhPay Payment Info</b>",
     "━━━━━━━━━━━━━━━━━━━",
-    `🌐 <b>API:</b> <code>bakong.cambo-kh.com</code>`,
+    `🌐 <b>API:</b> <code>khpay.site/api/v1</code>`,
     `🔑 <b>Token:</b> ${short}`,
+    `👤 <b>Account:</b> ${account}`,
     "━━━━━━━━━━━━━━━━━━━",
-    `✅ <b>Generate QR:</b> type=generate_qr`,
-    `✅ <b>Check MD5:</b> type=check_md5`,
+    `✅ <b>Generate QR:</b> POST /qr/generate`,
+    `✅ <b>Check Status:</b> GET /qr/check/{txn_id}`,
   ];
   return sendMessage(chatId, lines.join("\n"), KHPAY_SUBMENU_KB());
 }
