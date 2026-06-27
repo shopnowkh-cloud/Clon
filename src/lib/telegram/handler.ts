@@ -343,10 +343,11 @@ async function generatePlainQR(qr_string: string): Promise<Uint8Array> {
 
 async function createKhpayPayment(env: Env, amount: number) {
   try {
-    const res = await khpayRequest(env, "POST", "/qr/generate", {
-      amount: amount.toFixed(2),
+    const res = await khpayRequest(env, "POST", "/bakong/generate", {
+      amount: Number(amount),
       currency: "USD",
       note: "Telegram Bot Order",
+      type: "individual",
     });
     if (!res?.success || !res?.data) {
       return {
@@ -358,12 +359,16 @@ async function createKhpayPayment(env: Env, amount: number) {
     }
     const d = res.data;
     const transaction_id: string | null = d.transaction_id || null;
-    const qr_string: string = d.qr_string || "";
+    const md5: string | null = d.md5 || null;
+    const qr_string: string = d.qr || d.qr_string || "";
     const imgUrl: string | null = d.download_qr || null;
     let imgBuffer: Uint8Array | null = null;
     if (imgUrl) {
       try {
-        const r = await fetch(imgUrl, { signal: AbortSignal.timeout(10000) });
+        const r = await fetch(imgUrl, {
+          signal: AbortSignal.timeout(10000),
+          headers: { Authorization: `Bearer ${env.camboToken}` },
+        });
         if (r.ok) imgBuffer = new Uint8Array(await r.arrayBuffer());
         else throw new Error(`HTTP ${r.status}`);
       } catch {
@@ -375,7 +380,7 @@ async function createKhpayPayment(env: Env, amount: number) {
     if (!imgBuffer || !transaction_id) {
       return { imgBuffer: null, transaction_id: null, md5: null, error: "No QR data returned" };
     }
-    return { imgBuffer, transaction_id, md5: null as string | null, error: null as string | null };
+    return { imgBuffer, transaction_id, md5, error: null as string | null };
   } catch (e) {
     return {
       imgBuffer: null,
@@ -389,22 +394,18 @@ async function createKhpayPayment(env: Env, amount: number) {
 export async function checkKhpayStatus(
   env: Env,
   transaction_id: string,
-  _md5: string | null = null,
+  md5: string | null = null,
 ) {
   try {
-    const data = await khpayRequest(
-      env,
-      "GET",
-      `/qr/check/${encodeURIComponent(transaction_id)}`,
-    );
+    const body: Record<string, string> = {};
+    if (transaction_id) body.transaction_id = transaction_id;
+    if (md5) body.md5 = md5;
+    const data = await khpayRequest(env, "POST", "/bakong/check", body);
     const d = data?.data ?? data;
     const status = String(d?.status ?? "").toLowerCase();
     const isPaid =
       data?.success !== false &&
-      (status === "paid" ||
-        status === "success" ||
-        status === "completed" ||
-        d?.paid === true);
+      (status === "paid" || status === "success" || status === "completed");
     return { paid: isPaid, status: status || "pending", data: d };
   } catch (e) {
     console.warn("[WARN] checkKhpayStatus:", (e as Error).message);
