@@ -123,7 +123,14 @@ function MiniApp() {
 
   useEffect(() => {
     const app = twa();
-    if (app) { app.ready(); app.expand(); }
+    // Block access outside Telegram WebApp
+    if (!app || !app.initData) {
+      setScreen("error");
+      setErrorMsg("__TELEGRAM_ONLY__");
+      return;
+    }
+    app.ready();
+    app.expand();
     fetchProducts();
     return () => {
       if (pollRef.current) clearTimeout(pollRef.current);

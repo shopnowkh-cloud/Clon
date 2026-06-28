@@ -86,9 +86,27 @@ export const Route = createFileRoute("/api/webapp/order")({
             return Response.json({ ok: false, error: "No QR data from KhPay" }, { status: 500 });
           }
 
-          const qr_url =
-            download_qr ||
-            `https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=10&ecc=M&data=${encodeURIComponent(qr_string)}`;
+          // Always fetch the QR image server-side so the browser never needs auth headers.
+          let qr_url: string;
+          if (qr_string) {
+            // qrserver.com is public — no auth needed, works directly in browser.
+            qr_url = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=10&ecc=M&data=${encodeURIComponent(qr_string)}`;
+          } else {
+            // download_qr needs Bearer token — fetch server-side, return as data URL.
+            try {
+              const qrRes = await fetch(download_qr!, {
+                headers: { Authorization: `Bearer ${khpayToken}` },
+                signal: AbortSignal.timeout(12000),
+              });
+              if (!qrRes.ok) throw new Error(`HTTP ${qrRes.status}`);
+              const bytes = new Uint8Array(await qrRes.arrayBuffer());
+              let b64 = "";
+              for (let i = 0; i < bytes.length; i++) b64 += String.fromCharCode(bytes[i]);
+              qr_url = `data:image/png;base64,${btoa(b64)}`;
+            } catch {
+              return Response.json({ ok: false, error: "មិនអាចទាញ QR បាន" }, { status: 500 });
+            }
+          }
 
           const expires_at = Date.now() + 60_000;
 
