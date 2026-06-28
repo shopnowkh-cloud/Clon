@@ -13,6 +13,7 @@ VITE_SUPABASE_URL = "https://pemxxfhwbxtikahyvrls.supabase.co"
 VITE_SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlbXh4Zmh3Ynh0aWthaHl2cmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2MzMwMDIsImV4cCI6MjA5NzIwOTAwMn0.UvHsymsFq6HTqUZcGFRzzi_FElWDVpqmNjwhPl8kfXo"
 SUPABASE_URL = "https://pemxxfhwbxtikahyvrls.supabase.co"
 SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlbXh4Zmh3Ynh0aWthaHl2cmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2MzMwMDIsImV4cCI6MjA5NzIwOTAwMn0.UvHsymsFq6HTqUZcGFRzzi_FElWDVpqmNjwhPl8kfXo"
+CLOUDFLARE_KV_NAMESPACE_ID = "6d68ada68c4046b88d704f8cf2c524d7"
 
 [workflows]
 runButton = "Project"

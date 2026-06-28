@@ -1,9 +1,7 @@
 /**
- * Bot KV storage. Loads the entire bot state from a single Supabase table
- * at the start of a request and writes back at the end. Mirrors the legacy
- * db.json layout so the ported bot logic can keep using the same shapes.
+ * Bot KV storage backed by Cloudflare KV REST API.
+ * All state is stored under a single key "bot_state" to minimise API calls.
  */
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 export type AccountItem =
   | { email: string }
@@ -63,50 +61,62 @@ export interface BotState {
   purchases: Purchase[];
 }
 
-let _sb: SupabaseClient | null = null;
-function sb() {
-  if (!_sb) {
-    _sb = createClient(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      { auth: { persistSession: false, autoRefreshToken: false } },
-    );
+const DEFAULT_STATE: BotState = {
+  accounts: { account_types: {}, prices: {} },
+  sessions: {},
+  settings: {},
+  users: {},
+  purchases: [],
+};
+
+function kvBase() {
+  const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+  const apiToken = process.env.CLOUDFLARE_API_TOKEN;
+  const nsId = process.env.CLOUDFLARE_KV_NAMESPACE_ID;
+  if (!accountId || !apiToken || !nsId) {
+    throw new Error("Missing Cloudflare KV env vars: CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN, CLOUDFLARE_KV_NAMESPACE_ID");
   }
-  return _sb;
+  return {
+    url: `https://api.cloudflare.com/client/v4/accounts/${accountId}/storage/kv/namespaces/${nsId}/values`,
+    token: apiToken,
+  };
 }
 
 export async function loadState(): Promise<BotState> {
-  const { data, error } = await sb()
-    .from("bot_kv")
-    .select("key,value")
-    .in("key", ["accounts", "sessions", "settings", "users", "purchases"]);
-  if (error) throw new Error(`loadState: ${error.message}`);
-  const map = new Map<string, unknown>();
-  for (const row of data ?? []) map.set(row.key as string, row.value);
-  const accounts = (map.get("accounts") as AccountsData) ?? {
-    account_types: {},
-    prices: {},
-  };
-  return {
-    accounts: {
-      account_types: accounts.account_types ?? {},
-      prices: accounts.prices ?? {},
-    },
-    sessions: (map.get("sessions") as Record<string, Session>) ?? {},
-    settings: (map.get("settings") as Record<string, string>) ?? {},
-    users: (map.get("users") as Record<string, KnownUser>) ?? {},
-    purchases: (map.get("purchases") as Purchase[]) ?? [],
-  };
+  try {
+    const { url, token } = kvBase();
+    const res = await fetch(`${url}/bot_state`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (res.status === 404) return { ...DEFAULT_STATE };
+    if (!res.ok) throw new Error(`KV GET bot_state: HTTP ${res.status}`);
+    const text = await res.text();
+    const parsed = JSON.parse(text) as Partial<BotState>;
+    return {
+      accounts: parsed.accounts ?? { account_types: {}, prices: {} },
+      sessions: parsed.sessions ?? {},
+      settings: parsed.settings ?? {},
+      users: parsed.users ?? {},
+      purchases: parsed.purchases ?? [],
+    };
+  } catch (e) {
+    console.error("[storage] loadState error:", (e as Error).message);
+    return { ...DEFAULT_STATE };
+  }
 }
 
 export async function saveState(state: BotState): Promise<void> {
-  const rows = [
-    { key: "accounts", value: state.accounts },
-    { key: "sessions", value: state.sessions },
-    { key: "settings", value: state.settings },
-    { key: "users", value: state.users },
-    { key: "purchases", value: state.purchases },
-  ].map((r) => ({ ...r, updated_at: new Date().toISOString() }));
-  const { error } = await sb().from("bot_kv").upsert(rows, { onConflict: "key" });
-  if (error) throw new Error(`saveState: ${error.message}`);
+  const { url, token } = kvBase();
+  const res = await fetch(`${url}/bot_state`, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(state),
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`KV PUT bot_state: HTTP ${res.status} ${text}`);
+  }
 }
