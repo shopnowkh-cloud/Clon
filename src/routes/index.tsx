@@ -257,6 +257,32 @@ function MiniApp() {
     </div>
   );
 
+  // Telegram-only block
+  if (screen === "error" && errorMsg === "__TELEGRAM_ONLY__") return (
+    <div style={{ minHeight: "100dvh", background: "#ffffff", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "0 32px", gap: 0 }}>
+      <div style={{ width: 88, height: 88, borderRadius: "50%", background: "#e8f0fe", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 24 }}>
+        <svg width="48" height="48" viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="120" cy="120" r="120" fill="#2AABEE"/>
+          <path d="M55 120.5L98 137l16 51 11-32 60-57" stroke="#fff" strokeWidth="12" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M98 137L178 76" stroke="#fff" strokeWidth="12" strokeLinecap="round"/>
+        </svg>
+      </div>
+      <b style={{ fontSize: 20, color: "#111827", textAlign: "center", marginBottom: 12 }}>
+        Telegram Mini App តែប៉ុណ្ណោះ
+      </b>
+      <p style={{ fontSize: 14, color: "#6b7280", textAlign: "center", lineHeight: 1.7, margin: "0 0 32px" }}>
+        គូប៉ុង Shop ត្រូវបើកពីក្នុង Telegram Bot ។{"\n"}
+        មិនអាចប្រើប្រាស់លើ Browser ធម្មតាបានទេ។
+      </p>
+      <a
+        href="https://t.me/shopnowkh_bot"
+        style={{ display: "block", width: "100%", background: "#2AABEE", color: "#fff", textDecoration: "none", borderRadius: 14, padding: "15px 16px", fontSize: 16, fontWeight: 700, textAlign: "center", boxSizing: "border-box" }}
+      >
+        📲 បើក Telegram Bot
+      </a>
+    </div>
+  );
+
   // Error
   if (screen === "error") return (
     <div style={{ ...fill, background: th.bg, color: th.text, ...center, flexDirection: "column", gap: 16, padding: "0 24px" }}>
