@@ -120,3 +120,59 @@ export async function saveState(state: BotState): Promise<void> {
     throw new Error(`KV PUT bot_state: HTTP ${res.status} ${text}`);
   }
 }
+
+// ---------- Webapp orders ----------
+
+export interface WebappOrder {
+  userId: number;
+  type: string;
+  quantity: number;
+  total_price: number;
+  transaction_id: string;
+  md5: string | null;
+  khpayToken: string;
+  created_at: number;
+  delivered: boolean;
+}
+
+function txKey(txId: string) {
+  return `webapp_order_${txId.replace(/[^a-zA-Z0-9]/g, "_")}`;
+}
+
+export async function loadWebappOrder(txId: string): Promise<WebappOrder | null> {
+  try {
+    const { url, token } = kvBase();
+    const res = await fetch(`${url}/${txKey(txId)}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (res.status === 404) return null;
+    if (!res.ok) return null;
+    return JSON.parse(await res.text()) as WebappOrder;
+  } catch {
+    return null;
+  }
+}
+
+export async function saveWebappOrder(txId: string, order: WebappOrder): Promise<void> {
+  const { url, token } = kvBase();
+  const res = await fetch(`${url}/${txKey(txId)}?expiration_ttl=1800`, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(order),
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`KV PUT webapp_order: HTTP ${res.status} ${text}`);
+  }
+}
+
+export async function markWebappOrderDelivered(txId: string): Promise<void> {
+  const order = await loadWebappOrder(txId);
+  if (order) {
+    order.delivered = true;
+    await saveWebappOrder(txId, order);
+  }
+}

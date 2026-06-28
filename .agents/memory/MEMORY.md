@@ -1,0 +1,2 @@
+- [Cloudflare Deploy](cloudflare-deploy.md) — wrangler@3 required (not v4); account_id + workers_dev must be injected into .output/server/wrangler.json before deploy.
+- [Bot + Mini App Architecture](bot-miniapp-arch.md) — KV REST API for state; mini app at root /; bot webhook at /api/public/telegram/webhook; secrets vs vars split for worker.

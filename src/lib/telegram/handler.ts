@@ -103,9 +103,11 @@ const ADMIN_BUTTON_LABELS = new Set([
   ADMIN_SETTINGS_BTN,
 ]);
 
+const WEBAPP_URL = process.env.WEBAPP_URL || "";
 const USER_KB = Markup.keyboard([
   [{ text: BTN_BUY, style: "danger" }],
   [{ text: BTN_HOWTO, style: "success" }, { text: BTN_HISTORY, style: "primary" }],
+  ...(WEBAPP_URL ? [[{ text: "🛒 Mini App", web_app: { url: WEBAPP_URL } }]] : []),
 ] as any);
 const ADMIN_KB = USER_KB;
 // Bot API 9.4 keyboard button styles: success | primary | danger | default
