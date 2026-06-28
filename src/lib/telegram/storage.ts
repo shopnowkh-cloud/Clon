@@ -1,6 +1,6 @@
 /**
- * Bot KV storage backed by Cloudflare KV REST API.
- * All state is stored under a single key "bot_state" to minimise API calls.
+ * Bot KV storage backed by Replit PostgreSQL.
+ * All state is stored in a single `bot_kv` table keyed by name.
  */
 
 export type AccountItem =
@@ -61,68 +61,6 @@ export interface BotState {
   purchases: Purchase[];
 }
 
-const DEFAULT_STATE: BotState = {
-  accounts: { account_types: {}, prices: {} },
-  sessions: {},
-  settings: {},
-  users: {},
-  purchases: [],
-};
-
-function kvBase() {
-  const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
-  const apiToken = process.env.CLOUDFLARE_API_TOKEN;
-  const nsId = process.env.CLOUDFLARE_KV_NAMESPACE_ID;
-  if (!accountId || !apiToken || !nsId) {
-    throw new Error("Missing Cloudflare KV env vars: CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN, CLOUDFLARE_KV_NAMESPACE_ID");
-  }
-  return {
-    url: `https://api.cloudflare.com/client/v4/accounts/${accountId}/storage/kv/namespaces/${nsId}/values`,
-    token: apiToken,
-  };
-}
-
-export async function loadState(): Promise<BotState> {
-  try {
-    const { url, token } = kvBase();
-    const res = await fetch(`${url}/bot_state`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (res.status === 404) return { ...DEFAULT_STATE };
-    if (!res.ok) throw new Error(`KV GET bot_state: HTTP ${res.status}`);
-    const text = await res.text();
-    const parsed = JSON.parse(text) as Partial<BotState>;
-    return {
-      accounts: parsed.accounts ?? { account_types: {}, prices: {} },
-      sessions: parsed.sessions ?? {},
-      settings: parsed.settings ?? {},
-      users: parsed.users ?? {},
-      purchases: parsed.purchases ?? [],
-    };
-  } catch (e) {
-    console.error("[storage] loadState error:", (e as Error).message);
-    return { ...DEFAULT_STATE };
-  }
-}
-
-export async function saveState(state: BotState): Promise<void> {
-  const { url, token } = kvBase();
-  const res = await fetch(`${url}/bot_state`, {
-    method: "PUT",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(state),
-  });
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`KV PUT bot_state: HTTP ${res.status} ${text}`);
-  }
-}
-
-// ---------- Webapp orders ----------
-
 export interface WebappOrder {
   userId: number;
   type: string;
@@ -135,38 +73,95 @@ export interface WebappOrder {
   delivered: boolean;
 }
 
-function txKey(txId: string) {
-  return `webapp_order_${txId.replace(/[^a-zA-Z0-9]/g, "_")}`;
+const DEFAULT_STATE: BotState = {
+  accounts: { account_types: {}, prices: {} },
+  sessions: {},
+  settings: {},
+  users: {},
+  purchases: [],
+};
+
+// ---------- DB helpers ----------
+
+async function getDb() {
+  const { pool } = await import("../../server/db");
+  return pool;
 }
+
+async function kvGet<T>(key: string): Promise<T | null> {
+  const db = await getDb();
+  const res = await db.query(
+    "SELECT value FROM bot_kv WHERE key = $1",
+    [key],
+  );
+  if (res.rows.length === 0) return null;
+  return res.rows[0].value as T;
+}
+
+async function kvSet(key: string, value: unknown): Promise<void> {
+  const db = await getDb();
+  await db.query(
+    `INSERT INTO bot_kv (key, value, updated_at)
+     VALUES ($1, $2, now())
+     ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()`,
+    [key, JSON.stringify(value)],
+  );
+}
+
+// ---------- BotState ----------
+
+export async function loadState(): Promise<BotState> {
+  try {
+    const [accounts, sessions, settings, users, purchases] = await Promise.all([
+      kvGet<AccountsData>("accounts"),
+      kvGet<Record<string, Session>>("sessions"),
+      kvGet<Record<string, string>>("settings"),
+      kvGet<Record<string, KnownUser>>("users"),
+      kvGet<Purchase[]>("purchases"),
+    ]);
+    return {
+      accounts: accounts ?? { account_types: {}, prices: {} },
+      sessions: sessions ?? {},
+      settings: settings ?? {},
+      users: users ?? {},
+      purchases: purchases ?? [],
+    };
+  } catch (e) {
+    console.error("[storage] loadState error:", (e as Error).message);
+    return { ...DEFAULT_STATE };
+  }
+}
+
+export async function saveState(state: BotState): Promise<void> {
+  await Promise.all([
+    kvSet("accounts", state.accounts),
+    kvSet("sessions", state.sessions),
+    kvSet("settings", state.settings),
+    kvSet("users", state.users),
+    kvSet("purchases", state.purchases),
+  ]);
+}
+
+// ---------- Webapp orders ----------
 
 export async function loadWebappOrder(txId: string): Promise<WebappOrder | null> {
   try {
-    const { url, token } = kvBase();
-    const res = await fetch(`${url}/${txKey(txId)}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (res.status === 404) return null;
-    if (!res.ok) return null;
-    return JSON.parse(await res.text()) as WebappOrder;
+    const db = await getDb();
+    const key = `webapp_order_${txId.replace(/[^a-zA-Z0-9]/g, "_")}`;
+    const res = await db.query(
+      "SELECT value FROM bot_kv WHERE key = $1",
+      [key],
+    );
+    if (res.rows.length === 0) return null;
+    return res.rows[0].value as WebappOrder;
   } catch {
     return null;
   }
 }
 
 export async function saveWebappOrder(txId: string, order: WebappOrder): Promise<void> {
-  const { url, token } = kvBase();
-  const res = await fetch(`${url}/${txKey(txId)}?expiration_ttl=1800`, {
-    method: "PUT",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(order),
-  });
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`KV PUT webapp_order: HTTP ${res.status} ${text}`);
-  }
+  const key = `webapp_order_${txId.replace(/[^a-zA-Z0-9]/g, "_")}`;
+  await kvSet(key, order);
 }
 
 export async function markWebappOrderDelivered(txId: string): Promise<void> {

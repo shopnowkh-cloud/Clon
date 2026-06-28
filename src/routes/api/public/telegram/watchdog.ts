@@ -2,16 +2,15 @@ import { createFileRoute } from "@tanstack/react-router";
 import { runWatchdog } from "@/lib/telegram/handler";
 
 /**
- * Payment watchdog endpoint. Called by pg_cron once a minute (and reachable
- * for manual triggering). Authenticates via Supabase anon key in the `apikey`
- * header, matching the canonical pg_cron pattern.
+ * Payment watchdog endpoint. Called every minute to check pending payments.
+ * Authenticates via WATCHDOG_SECRET header.
  */
 export const Route = createFileRoute("/api/public/telegram/watchdog")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const expected = process.env.SUPABASE_PUBLISHABLE_KEY;
-        const got = request.headers.get("apikey") ?? "";
+        const expected = process.env.WATCHDOG_SECRET;
+        const got = request.headers.get("x-watchdog-secret") ?? "";
         if (!expected || got !== expected) {
           return new Response("Unauthorized", { status: 401 });
         }
