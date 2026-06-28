@@ -1,26 +1,19 @@
 /**
- * Thin Telegram Bot API wrapper that calls the Lovable connector gateway.
- * Replaces the small subset of telegraf we need.
+ * Thin Telegram Bot API wrapper that calls the Telegram API directly.
  */
 
-const GATEWAY_URL = "https://connector-gateway.lovable.dev/telegram";
+const TG_BASE = "https://api.telegram.org";
 
-function headers(extra: Record<string, string> = {}) {
-  const lovable = process.env.LOVABLE_API_KEY;
-  const tg = process.env.TELEGRAM_API_KEY;
-  if (!lovable) throw new Error("LOVABLE_API_KEY is not configured");
-  if (!tg) throw new Error("TELEGRAM_API_KEY is not configured");
-  return {
-    Authorization: `Bearer ${lovable}`,
-    "X-Connection-Api-Key": tg,
-    ...extra,
-  };
+function apiUrl(method: string): string {
+  const token = process.env.TELEGRAM_API_KEY;
+  if (!token) throw new Error("TELEGRAM_API_KEY is not configured");
+  return `${TG_BASE}/bot${token}/${method}`;
 }
 
 async function call<T = any>(method: string, body: unknown): Promise<T> {
-  const res = await fetch(`${GATEWAY_URL}/${method}`, {
+  const res = await fetch(apiUrl(method), {
     method: "POST",
-    headers: headers({ "Content-Type": "application/json" }),
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
   const text = await res.text();
@@ -123,7 +116,7 @@ export async function answerCallbackQuery(
 }
 
 /**
- * Send a photo by uploading raw bytes (multipart/form-data through the gateway).
+ * Send a photo by uploading raw bytes (multipart/form-data).
  */
 export async function sendPhoto(
   chat_id: number | string,
@@ -131,6 +124,8 @@ export async function sendPhoto(
   extra: Record<string, any> = {},
 ): Promise<SentMessage | null> {
   try {
+    const token = process.env.TELEGRAM_API_KEY;
+    if (!token) throw new Error("TELEGRAM_API_KEY is not configured");
     const form = new FormData();
     form.append("chat_id", String(chat_id));
     form.append("parse_mode", "HTML");
@@ -139,9 +134,8 @@ export async function sendPhoto(
       form.append(k, typeof v === "string" ? v : JSON.stringify(v));
     }
     form.append("photo", new Blob([photo as BlobPart], { type: "image/png" }), "qr.png");
-    const res = await fetch(`${GATEWAY_URL}/sendPhoto`, {
+    const res = await fetch(`${TG_BASE}/bot${token}/sendPhoto`, {
       method: "POST",
-      headers: headers(),
       body: form,
     });
     const data = await res.json().catch(() => null);
@@ -163,6 +157,8 @@ export async function sendDocument(
   caption = "",
 ): Promise<SentMessage | null> {
   try {
+    const token = process.env.TELEGRAM_API_KEY;
+    if (!token) throw new Error("TELEGRAM_API_KEY is not configured");
     const form = new FormData();
     form.append("chat_id", String(chat_id));
     if (caption) {
@@ -174,9 +170,8 @@ export async function sendDocument(
       new Blob([bytes as BlobPart], { type: "application/octet-stream" }),
       filename,
     );
-    const res = await fetch(`${GATEWAY_URL}/sendDocument`, {
+    const res = await fetch(`${TG_BASE}/bot${token}/sendDocument`, {
       method: "POST",
-      headers: headers(),
       body: form,
     });
     const data = await res.json().catch(() => null);
